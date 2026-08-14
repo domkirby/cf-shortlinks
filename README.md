@@ -153,9 +153,9 @@ pnpm exec wrangler d1 execute domk-links --remote \
 Deploy:
 
 ```sh
-pnpm --filter @domk/redirect-worker deploy
-pnpm --filter @domk/admin-api deploy
-pnpm --filter @domk/admin-frontend deploy
+pnpm --filter @domk/redirect-worker run deploy
+pnpm --filter @domk/admin-api run deploy
+pnpm --filter @domk/admin-frontend run deploy
 ```
 
 Gate the Pages project with Access too. There's nothing sensitive in the bundle, but
