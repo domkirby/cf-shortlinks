@@ -1,0 +1,38 @@
+name = "domk-admin-api"
+main = "src/index.ts"
+compatibility_date = "2025-01-15"
+compatibility_flags = ["nodejs_compat"]
+workers_dev = false
+
+# Authenticated, low-QPS. Cloudflare Access sits in front of this hostname
+# with two policies: one for human identity, one for service tokens.
+routes = [
+  { pattern = "links.domk.pro/api/*", zone_name = "domk.pro" }
+]
+
+[observability]
+enabled = true
+
+[vars]
+# Zero Trust team domain — "acme", "acme.cloudflareaccess.com" and the full
+# https:// URL are all accepted.
+ACCESS_TEAM_DOMAIN = "REPLACE_WITH_TEAM_DOMAIN"
+# AUD tag of the links.domk.pro Access application.
+ACCESS_AUD = "REPLACE_WITH_ACCESS_AUD_TAG"
+SHORT_DOMAIN = "domk.pro"
+CF_ACCOUNT_ID = "REPLACE_WITH_ACCOUNT_ID"
+ANALYTICS_DATASET = "link_clicks"
+KV_TTL_SECONDS = "86400"
+
+# Secrets (never in this file):
+#   wrangler secret put CF_ANALYTICS_API_TOKEN   # needs Account Analytics:Read
+
+[[d1_databases]]
+binding = "DB"
+database_name = "domk-links"
+database_id = "REPLACE_WITH_D1_DATABASE_ID"
+
+# Same namespace the redirect worker reads. Every mutation writes through here.
+[[kv_namespaces]]
+binding = "LINKS"
+id = "REPLACE_WITH_KV_NAMESPACE_ID"
