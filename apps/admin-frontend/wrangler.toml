@@ -1,6 +1,6 @@
 # Cloudflare Pages project for the admin SPA.
 #
-# Deployed with: pnpm --filter @domk/admin-frontend deploy
+# Deployed with: pnpm --filter @domk/admin-frontend run deploy
 #
 # Access-gate this Pages project as well as the API. There's nothing sensitive
 # in the bundle, but static assets for an admin console have no business being

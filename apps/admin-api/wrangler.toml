@@ -16,12 +16,12 @@ enabled = true
 [vars]
 # Zero Trust team domain — "acme", "acme.cloudflareaccess.com" and the full
 # https:// URL are all accepted.
-ACCESS_TEAM_DOMAIN = "REPLACE_WITH_TEAM_DOMAIN"
+ACCESS_TEAM_DOMAIN = "domkirbycreative"
 # AUD tag of the links.domk.pro Access application.
-ACCESS_AUD = "REPLACE_WITH_ACCESS_AUD_TAG"
+ACCESS_AUD = "2f738987cafb86420f5796afff2f78c5f43a4a6bacb46f6fea8edf9964a23521"
 SHORT_DOMAIN = "domk.pro"
-CF_ACCOUNT_ID = "REPLACE_WITH_ACCOUNT_ID"
-ANALYTICS_DATASET = "link_clicks"
+CF_ACCOUNT_ID = "0e758d1a495ad42f4476932698a6abfb"
+ANALYTICS_DATASET = "domkpro_clicks"
 KV_TTL_SECONDS = "86400"
 
 # Secrets (never in this file):
@@ -30,9 +30,9 @@ KV_TTL_SECONDS = "86400"
 [[d1_databases]]
 binding = "DB"
 database_name = "domk-links"
-database_id = "REPLACE_WITH_D1_DATABASE_ID"
+database_id = "7443e9ed-1854-4f42-b1b0-682c14e87026"
 
 # Same namespace the redirect worker reads. Every mutation writes through here.
 [[kv_namespaces]]
 binding = "LINKS"
-id = "REPLACE_WITH_KV_NAMESPACE_ID"
+id = "6c242f3b1504475b8b88a03caa8473a4"

@@ -35,13 +35,13 @@ jobs:
         run: pnpm db:migrate:remote
 
       - name: Deploy redirect worker
-        run: pnpm --filter @domk/redirect-worker deploy
+        run: pnpm --filter @domk/redirect-worker run deploy
 
       - name: Deploy admin API
-        run: pnpm --filter @domk/admin-api deploy
+        run: pnpm --filter @domk/admin-api run deploy
 
       - name: Build admin SPA
         run: pnpm --filter @domk/admin-frontend build
 
       - name: Deploy admin SPA
-        run: pnpm --filter @domk/admin-frontend deploy
+        run: pnpm --filter @domk/admin-frontend run deploy

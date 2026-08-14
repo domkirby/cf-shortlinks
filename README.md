@@ -162,6 +162,35 @@ Gate the Pages project with Access too. There's nothing sensitive in the bundle,
 it keeps the trust boundary in one place: everything on `links.domk.pro` is behind
 Access.
 
+## CI/CD
+
+`.github/workflows/deploy.yml` runs the same steps on every push to `main`: apply D1
+migrations, then deploy both Workers, then build and deploy the Pages project. It
+authenticates with two repo secrets:
+
+| Secret | Value |
+|---|---|
+| `CLOUDFLARE_API_TOKEN` | A **custom** API token (not the global API key) |
+| `CLOUDFLARE_ACCOUNT_ID` | The account ID shown in the Cloudflare dashboard sidebar, or `wrangler whoami` |
+
+The token needs enough scope to run migrations and deploy both product types the
+workflow touches — D1, Workers, and Pages — plus the zone permission Workers needs to
+attach the custom routes declared in `wrangler.toml`. Create it under **My Profile →
+API Tokens → Create Token → Custom token** with:
+
+| Scope | Permission |
+|---|---|
+| Account | `D1:Edit` |
+| Account | `Workers Scripts:Edit` |
+| Account | `Cloudflare Pages:Edit` |
+| Zone (`domk.pro`) | `Workers Routes:Edit` |
+
+The Cloudflare-managed "Edit Cloudflare Workers" template covers the Workers and
+routes permissions but not `D1:Edit` or `Cloudflare Pages:Edit` — those two have to be
+added by hand, or use a fully custom token as above. This token is distinct from the
+`CF_ANALYTICS_API_TOKEN` runtime secret set on `admin-api` (`Account Analytics:Read`,
+used by the deployed Worker to query click stats, not by CI to deploy).
+
 ## Development
 
 ```sh

@@ -14,7 +14,7 @@ enabled = true
 
 [vars]
 # Unset (or empty) keeps the plain-404 behaviour for unknown slugs.
-DEFAULT_REDIRECT_URL = ""
+DEFAULT_REDIRECT_URL = "https://domkirby.com"
 KV_TTL_SECONDS = "86400"
 REDIRECT_STATUS = "302"
 
@@ -22,15 +22,15 @@ REDIRECT_STATUS = "302"
 # Replace the id after: wrangler kv namespace create LINKS
 [[kv_namespaces]]
 binding = "LINKS"
-id = "REPLACE_WITH_KV_NAMESPACE_ID"
+id = "6c242f3b1504475b8b88a03caa8473a4"
 
 # Source of truth. Read only on a KV miss.
 # Replace the id after: wrangler d1 create domk-links
 [[d1_databases]]
 binding = "DB"
 database_name = "domk-links"
-database_id = "REPLACE_WITH_D1_DATABASE_ID"
+database_id = "7443e9ed-1854-4f42-b1b0-682c14e87026"
 
 [[analytics_engine_datasets]]
-binding = "ANALYTICS"
-dataset = "link_clicks"
+binding = "domkpro_clicks"
+dataset = "domkpro_clicks"
