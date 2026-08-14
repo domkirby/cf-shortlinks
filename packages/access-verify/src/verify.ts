@@ -1,4 +1,4 @@
-import { createRemoteJWKSet, jwtVerify, errors as joseErrors } from 'jose';
+import { createRemoteJWKSet, decodeProtectedHeader, jwtVerify, errors as joseErrors } from 'jose';
 import type { AccessJwtPayload } from '@domk/shared-types';
 import { AccessVerifyError } from './errors.js';
 
@@ -20,6 +20,9 @@ export interface AccessVerifyConfig {
 export const ACCESS_JWT_HEADER = 'Cf-Access-Jwt-Assertion';
 /** Set on browser sessions; the SPA relies on this rather than the header. */
 export const ACCESS_COOKIE = 'CF_Authorization';
+
+/** The only algorithm Cloudflare Access signs with. */
+const ALLOWED_ALG = 'RS256';
 
 export function normalizeTeamDomain(teamDomain: string): string {
   const trimmed = teamDomain.trim().replace(/\/+$/, '');
@@ -74,6 +77,20 @@ export async function verifyAccessJwt(
     throw new AccessVerifyError('misconfigured', 'ACCESS_AUD is not configured', 500);
   }
 
+  // Reject a mismatched "alg" (e.g. the classic `alg: none` forgery)
+  // synchronously, before ever calling into `jwtVerify`. Passing a bad alg
+  // through to jose's own `algorithms` check still throws from several
+  // `await` levels deep inside its verify pipeline, which workerd flags as an
+  // unhandled rejection even though our try/catch does handle it. A plain
+  // synchronous check here never creates that promise chain.
+  try {
+    if (decodeProtectedHeader(token).alg !== ALLOWED_ALG) {
+      throw new AccessVerifyError('invalid_token', 'Access JWT failed verification');
+    }
+  } catch (err) {
+    throw toAccessError(err);
+  }
+
   const issuer = normalizeTeamDomain(config.teamDomain);
   const jwks = getJwks(certsUrl(config.teamDomain));
 
@@ -82,6 +99,7 @@ export async function verifyAccessJwt(
       issuer,
       audience: config.aud,
       clockTolerance: config.clockToleranceSec ?? 30,
+      algorithms: [ALLOWED_ALG],
     });
     return payload as unknown as AccessJwtPayload;
   } catch (err) {
