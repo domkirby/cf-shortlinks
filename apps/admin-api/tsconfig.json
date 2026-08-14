@@ -1,0 +1,10 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "noEmit": true,
+    // vitest-pool-workers/types declares the `cloudflare:test` module the
+    // integration tests import (env, createExecutionContext, …).
+    "types": ["@cloudflare/workers-types", "@cloudflare/vitest-pool-workers/types"]
+  },
+  "include": ["src/**/*.ts", "test/**/*.ts"]
+}

@@ -1,0 +1,11 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "noEmit": true,
+    // This library targets the Workers runtime (Request, Response, URL,
+    // WebCrypto); Node satisfies the same globals, so the tests type-check
+    // against the deployment target rather than a Node-shaped approximation.
+    "types": ["@cloudflare/workers-types"]
+  },
+  "include": ["src/**/*.ts", "test/**/*.ts"]
+}

@@ -1,0 +1,47 @@
+name: Deploy
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+
+# Migrations run before any Worker deploy: a Worker that expects a column the
+# database doesn't have yet fails on live traffic, whereas a database with a
+# column nothing reads yet is harmless.
+concurrency:
+  group: deploy
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment: production
+    env:
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      - name: Apply D1 migrations
+        run: pnpm db:migrate:remote
+
+      - name: Deploy redirect worker
+        run: pnpm --filter @domk/redirect-worker run deploy
+
+      - name: Deploy admin API
+        run: pnpm --filter @domk/admin-api run deploy
+
+      - name: Build admin SPA
+        run: pnpm --filter @domk/admin-frontend build
+
+      - name: Deploy admin SPA
+        run: pnpm --filter @domk/admin-frontend run deploy
