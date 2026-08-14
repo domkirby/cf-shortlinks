@@ -146,7 +146,7 @@ Bootstrap the first admin by hand — there is no self-service signup, and the A
 authorizes against a table that starts empty:
 
 ```sh
-pnpm exec wrangler d1 execute domk-links --remote \
+pnpm exec wrangler d1 execute domk-links --remote --config apps/admin-api/wrangler.toml \
   --command "INSERT INTO admins (email, role, created_at) VALUES ('you@example.com', 'owner', unixepoch() * 1000)"
 ```
 

@@ -31,6 +31,7 @@ KV_TTL_SECONDS = "86400"
 binding = "DB"
 database_name = "domk-links"
 database_id = "7443e9ed-1854-4f42-b1b0-682c14e87026"
+migrations_dir = "../../packages/db-schema/migrations"
 
 # Same namespace the redirect worker reads. Every mutation writes through here.
 [[kv_namespaces]]
