@@ -38,6 +38,7 @@ const isOwner = () => actor.value?.type === 'service' || actor.value?.role === '
       </nav>
       <span v-if="actor" class="identity">
         {{ actor.type === 'human' ? `${actor.email} · ${actor.role}` : `service · ${actor.name}` }}
+        <a href="/cdn-cgi/access/logout" class="logout">Log out</a>
       </span>
     </header>
 
