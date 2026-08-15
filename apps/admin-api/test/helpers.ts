@@ -32,6 +32,7 @@ export async function resetTables(): Promise<void> {
     env.DB.prepare('DELETE FROM links'),
     env.DB.prepare('DELETE FROM admins'),
     env.DB.prepare('DELETE FROM service_tokens'),
+    env.DB.prepare('DELETE FROM themes'),
   ]);
   const { keys } = await env.LINKS.list();
   await Promise.all(keys.map((key) => env.LINKS.delete(key.name)));

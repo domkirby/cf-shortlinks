@@ -23,8 +23,11 @@ export function toLink(row: LinkRow): Link {
     active: row.active === 1,
     expiresAt: row.expiresAt ?? null,
     tags: parseTags(row.tags),
+    passwordProtected: row.passwordProtected === 1,
+    themeId: row.themeId ?? null,
     createdAt: row.createdAt,
     updatedAt: row.updatedAt,
+    // row.passwordVerifier is deliberately never read here — write-only.
   };
 }
 

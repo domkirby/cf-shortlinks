@@ -34,6 +34,7 @@ const isOwner = () => actor.value?.type === 'service' || actor.value?.role === '
         <RouterLink to="/stats">Stats</RouterLink>
         <RouterLink v-if="isOwner()" to="/tokens">Service tokens</RouterLink>
         <RouterLink v-if="isOwner()" to="/admins">Admins</RouterLink>
+        <RouterLink v-if="isOwner()" to="/themes">Themes</RouterLink>
       </nav>
       <span v-if="actor" class="identity">
         {{ actor.type === 'human' ? `${actor.email} · ${actor.role}` : `service · ${actor.name}` }}

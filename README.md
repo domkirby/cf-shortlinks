@@ -17,9 +17,10 @@ Two trust boundaries:
 
 ```
 apps/
-  redirect-worker/   public hot path — domk.pro/*
-  admin-api/         authenticated CRUD — links.domk.pro/api/*
-  admin-frontend/    Vue 3 SPA on Pages — links.domk.pro
+  redirect-worker/    public hot path — domk.pro/*
+  admin-api/          authenticated CRUD — links.domk.pro/api/*
+  admin-frontend/     Vue 3 SPA on Pages — links.domk.pro
+  interactive-link/   unauthenticated interstitial pages — domk.pro/_i_/*
 packages/
   shared-types/      Link, ClickEvent, JWT claim shapes
   db-schema/         drizzle schema + D1 migrations
@@ -116,8 +117,43 @@ All routes are under `links.domk.pro/api` and require an Access assertion, excep
 | GET | `/api/stats/links/:slug` | `?days=1..90` |
 | GET/POST/PATCH/DELETE | `/api/tokens` | owner only |
 | GET/POST/PATCH/DELETE | `/api/admins` | owner only |
+| GET/POST/PATCH/DELETE | `/api/themes` | owner only; unlock-page appearance for protected links |
 
 Errors are uniform: `{"error": {"code", "message", "details?"}}`.
+
+## Password-protected links
+
+A convenience/privacy feature, not a security boundary — no rate limiting, no
+lockouts, nothing "ultra secure." A link marked `passwordProtected` resolves to an
+unlock page instead of its destination:
+
+```
+GET domk.pro/{slug}
+  └─ resolves (KV or D1) to https://domk.pro/_i_/pw/{slug} instead of the real
+     destination — the redirect worker has zero awareness that this is a
+     "password" concept, it just resolves a different destination string.
+
+GET domk.pro/_i_/pw/{slug}          (served by apps/interactive-link)
+  └─ themed unlock page, prompts for a password
+
+POST domk.pro/_i_/pw/{slug}/verify
+  └─ correct password → {"destination": "<real url>"}, page JS redirects there
+  └─ wrong password → 401, real destination never revealed
+```
+
+`interactive-link` never calls admin-api — it reads D1 directly, independently
+re-validating the slug is still protected/active/unexpired on every request rather
+than trusting that reaching `_i_/pw/*` at all implies any of that.
+
+The server never sees a plaintext password. The browser (both the admin-frontend,
+when setting a password, and the unlock page, when checking one) derives a verifier
+via PBKDF2 (WebCrypto, 210,000 iterations) from the password and a random salt, and
+sends `{salt}:{verifier}` (hex). The API HMAC-SHA256s the verifier once — cheap,
+since the client already did the expensive part — keyed by the link's own slug, and
+stores `{salt}::{hmac}`. Verifying re-does that HMAC and compares.
+
+Unlock-page appearance (background color, optional logo) comes from a `themes` row,
+managed at `/api/themes` (owner only) and assigned to a link via `themeId`.
 
 ## First-time setup
 
@@ -153,6 +189,7 @@ pnpm exec wrangler d1 execute domk-links --remote --config apps/admin-api/wrangl
 Deploy:
 
 ```sh
+pnpm --filter @domk/interactive-link run deploy
 pnpm --filter @domk/redirect-worker run deploy
 pnpm --filter @domk/admin-api run deploy
 pnpm --filter @domk/admin-frontend run deploy
@@ -165,8 +202,8 @@ Access.
 ## CI/CD
 
 `.github/workflows/deploy.yml` runs the same steps on every push to `main`: apply D1
-migrations, then deploy both Workers, then build and deploy the Pages project. It
-authenticates with two repo secrets:
+migrations, then deploy all three Workers, then build and deploy the Pages project.
+It authenticates with two repo secrets:
 
 | Secret | Value |
 |---|---|
@@ -198,7 +235,8 @@ pnpm db:migrate:local                # seed the local D1
 pnpm dev:api                         # admin-api on :8787
 pnpm dev:frontend                    # SPA on :5173, proxies /api to :8787
 pnpm dev:redirect                    # redirect worker
-pnpm test                            # 167 tests
+pnpm dev:interactive                 # interactive-link (password unlock pages)
+pnpm test
 pnpm typecheck
 ```
 
@@ -210,10 +248,10 @@ real request.
 
 ## Tests
 
-`admin-api` runs against a real D1 and a real KV inside workerd, with the same
-migrations production gets — so schema drift shows up in tests first. The redirect
-worker and `access-verify` use fast unit tests with stubbed bindings and a stubbed
-JWKS endpoint.
+`admin-api` and `interactive-link` run against a real D1 (and, for admin-api, a real
+KV) inside workerd, with the same migrations production gets — so schema drift shows
+up in tests first. The redirect worker and `access-verify` use fast unit tests with
+stubbed bindings and a stubbed JWKS endpoint.
 
 ## Decisions worth knowing
 
@@ -227,6 +265,10 @@ JWKS endpoint.
   read-only integration shows up.
 - **The redirect worker imports no framework.** Every dependency avoided on that
   path is milliseconds saved globally.
-- **`/favicon.ico`, `/robots.txt` and `/healthz` are answered by the worker** and
-  are therefore reserved slugs — the admin API refuses to create them, since such a
-  link would save successfully and then never resolve.
+- **`/favicon.ico`, `/robots.txt`, `/healthz` and `_i_` are answered by a worker**
+  and are therefore reserved slugs — the admin API refuses to create them, since
+  such a link would save successfully and then never resolve.
+- **Password protection is a destination swap, not a redirect-worker feature.** A
+  protected link's cached/fallback "destination" is simply the interactive-link
+  unlock URL instead of the real one — the redirect worker needs no code that knows
+  what "password protected" means at all.

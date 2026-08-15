@@ -5,6 +5,19 @@ interface LinkRow {
   destination: string;
   expires_at: number | null;
   active: number;
+  password_protected: number;
+}
+
+/**
+ * Redirect worker has zero concept of "password protected" — for a protected
+ * link, the resolved "destination" is just the interactive-link unlock page
+ * instead of the real one. This mirrors admin-api's kv-sync.ts substitution
+ * exactly, so KV (written by either side) and this D1 fallback never disagree.
+ */
+function effectiveDestination(env: Env, slug: string, row: LinkRow): string {
+  if (row.password_protected !== 1) return row.destination;
+  const domain = (env.SHORT_DOMAIN ?? '').replace(/^https?:\/\//, '').replace(/\/+$/, '');
+  return `https://${domain}/_i_/pw/${slug}`;
 }
 
 /**
@@ -21,7 +34,7 @@ export async function lookupSlugInD1(
   now: number,
 ): Promise<ResolvedLink | null> {
   const row = await env.DB.prepare(
-    'SELECT destination, expires_at, active FROM links WHERE slug = ?1 LIMIT 1',
+    'SELECT destination, expires_at, active, password_protected FROM links WHERE slug = ?1 LIMIT 1',
   )
     .bind(slug)
     .first<LinkRow>();
@@ -29,7 +42,7 @@ export async function lookupSlugInD1(
   if (!row || row.active !== 1) return null;
 
   const link: ResolvedLink = {
-    destination: row.destination,
+    destination: effectiveDestination(env, slug, row),
     expiresAt: row.expires_at ?? null,
   };
   return isExpired(link, now) ? null : link;

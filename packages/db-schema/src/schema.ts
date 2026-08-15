@@ -2,6 +2,22 @@ import { sql } from 'drizzle-orm';
 import { index, integer, sqliteTable, text } from 'drizzle-orm/sqlite-core';
 
 /**
+ * Reusable unlock-page appearance for password-protected links. The first
+ * relational table in this schema — themes are meant to be defined once and
+ * assigned to many links, unlike tags, which stay inlined per-link because
+ * they've never needed that kind of reuse.
+ */
+export const themes = sqliteTable('themes', {
+  id: integer('id').primaryKey({ autoIncrement: true }),
+  name: text('name').notNull().unique(),
+  backgroundColor: text('background_color').notNull(),
+  /** Optional; shown above the password prompt when set. */
+  logoUrl: text('logo_url'),
+  createdAt: integer('created_at').notNull(),
+  updatedAt: integer('updated_at').notNull(),
+});
+
+/**
  * Links — the source of truth. KV mirrors this for the redirect hot path, but
  * anything not written here does not exist.
  */
@@ -18,6 +34,15 @@ export const links = sqliteTable(
     expiresAt: integer('expires_at'),
     /** JSON array of strings. Kept as text — no join table until tags earn one. */
     tags: text('tags'),
+    passwordProtected: integer('password_protected').notNull().default(0),
+    /**
+     * `{pbkdf_salt}::{hmac_verifier}` (double colon). Write-only from the
+     * API's perspective — never returned to clients. See
+     * apps/admin-api/src/lib/password.ts for how this is derived.
+     */
+    passwordVerifier: text('password_verifier'),
+    /** Not enforced at the D1 level (no FK support here) — see routes/themes.ts. */
+    themeId: integer('theme_id').references(() => themes.id),
     createdAt: integer('created_at').notNull(),
     updatedAt: integer('updated_at').notNull(),
   },
@@ -61,3 +86,5 @@ export type LinkRow = typeof links.$inferSelect;
 export type NewLinkRow = typeof links.$inferInsert;
 export type AdminRow = typeof admins.$inferSelect;
 export type ServiceTokenRow = typeof serviceTokens.$inferSelect;
+export type ThemeRow = typeof themes.$inferSelect;
+export type NewThemeRow = typeof themes.$inferInsert;

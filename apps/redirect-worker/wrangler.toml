@@ -17,6 +17,7 @@ enabled = true
 DEFAULT_REDIRECT_URL = "https://domkirby.com"
 KV_TTL_SECONDS = "86400"
 REDIRECT_STATUS = "302"
+SHORT_DOMAIN = "domk.pro"
 
 # Cache of the links table. Same namespace the admin API writes through to.
 # Replace the id after: wrangler kv namespace create LINKS

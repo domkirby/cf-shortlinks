@@ -7,6 +7,7 @@ import { getDb, isUniqueViolation, serializeTags, toLink } from '../lib/db.js';
 import { syncLinkToKv, removeSlugFromKv } from '../lib/kv-sync.js';
 import { conflict, notFound } from '../lib/errors.js';
 import { generateSlug, parseCreateLink, parsePagination, parseUpdateLink } from '../lib/validate.js';
+import { buildStoredVerifier } from '../lib/password.js';
 
 const app = new Hono<AppEnv>();
 
@@ -86,6 +87,11 @@ app.post('/', async (c) => {
   return c.json(linkResponse(c.env.SHORT_DOMAIN, link), 201);
 });
 
+/** Hashes the client's password payload against a specific slug, if present. */
+async function resolvePasswordVerifier(slug: string, payload: string | undefined): Promise<string | null> {
+  return payload ? await buildStoredVerifier(slug, payload) : null;
+}
+
 /** PATCH /api/links/:id — partial update, write-through handles the rest. */
 app.patch('/:id', async (c) => {
   const db = getDb(c.env);
@@ -99,6 +105,18 @@ app.patch('/:id', async (c) => {
   if (update.expiresAt !== undefined) patch.expiresAt = update.expiresAt;
   if (update.tags !== undefined) patch.tags = serializeTags(update.tags);
   if (update.active !== undefined) patch.active = update.active ? 1 : 0;
+  if (update.themeId !== undefined) patch.themeId = update.themeId;
+  if (update.passwordVerifierPayload !== undefined) {
+    if (update.passwordVerifierPayload === null) {
+      patch.passwordProtected = 0;
+      patch.passwordVerifier = null;
+    } else {
+      // Hash against the final (possibly just-renamed) slug.
+      const slug = update.slug ?? existing.slug;
+      patch.passwordProtected = 1;
+      patch.passwordVerifier = await resolvePasswordVerifier(slug, update.passwordVerifierPayload);
+    }
+  }
 
   let updated;
   try {
@@ -146,10 +164,22 @@ async function loadLink(db: ReturnType<typeof getDb>, idOrSlug: string): Promise
 
 async function insertLink(
   db: ReturnType<typeof getDb>,
-  input: { slug: string; destination: string; expiresAt: number | null; tags: string[]; active: boolean },
+  input: {
+    slug: string;
+    destination: string;
+    expiresAt: number | null;
+    tags: string[];
+    active: boolean;
+    passwordVerifierPayload?: string;
+    themeId: number | null;
+  },
   owner: string,
   now: number,
 ) {
+  // The HMAC key is the slug, so this has to happen after the slug is known
+  // but before insert — safe here since (unlike D1 collision detection) the
+  // slug itself is already chosen locally, generated or not, by this point.
+  const passwordVerifier = await resolvePasswordVerifier(input.slug, input.passwordVerifierPayload);
   try {
     const rows = await db
       .insert(links)
@@ -160,6 +190,9 @@ async function insertLink(
         active: input.active ? 1 : 0,
         expiresAt: input.expiresAt,
         tags: serializeTags(input.tags),
+        passwordProtected: passwordVerifier ? 1 : 0,
+        passwordVerifier,
+        themeId: input.themeId,
         createdAt: now,
         updatedAt: now,
       })
@@ -182,7 +215,14 @@ async function insertLink(
  */
 async function insertWithGeneratedSlug(
   db: ReturnType<typeof getDb>,
-  input: { destination: string; expiresAt: number | null; tags: string[]; active: boolean },
+  input: {
+    destination: string;
+    expiresAt: number | null;
+    tags: string[];
+    active: boolean;
+    passwordVerifierPayload?: string;
+    themeId: number | null;
+  },
   owner: string,
   now: number,
 ) {

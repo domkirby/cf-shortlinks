@@ -22,6 +22,19 @@ function shouldBeCached(link: Link, now: number): boolean {
 }
 
 /**
+ * The redirect worker needs zero awareness of "password protected" as a
+ * concept — it just resolves a destination string. For a protected link, the
+ * cached "destination" is the interactive-link unlock page instead of the
+ * real one; the real destination only ever gets revealed after a correct
+ * password, by apps/interactive-link's own D1 read.
+ */
+function kvDestination(env: Env, link: Link): string {
+  if (!link.passwordProtected) return link.destination;
+  const domain = env.SHORT_DOMAIN.replace(/^https?:\/\//, '').replace(/\/+$/, '');
+  return `https://${domain}/_i_/pw/${link.slug}`;
+}
+
+/**
  * Write-through to the redirect cache after a D1 mutation.
  *
  * `previousSlug` matters on rename: the old key has to go, or the link keeps
@@ -55,7 +68,7 @@ export async function syncLinkToKv(
     return;
   }
 
-  const record: KvLinkRecord = { d: link.destination };
+  const record: KvLinkRecord = { d: kvDestination(env, link) };
   if (link.expiresAt !== null) record.e = link.expiresAt;
 
   try {

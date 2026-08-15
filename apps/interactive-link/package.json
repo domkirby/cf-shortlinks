@@ -1,0 +1,26 @@
+{
+  "name": "@domk/interactive-link",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy",
+    "build": "tsc --noEmit",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@domk/db-schema": "workspace:*",
+    "@domk/shared-types": "workspace:*",
+    "drizzle-orm": "^0.38.4",
+    "hono": "^4.6.20"
+  },
+  "devDependencies": {
+    "@cloudflare/vitest-pool-workers": "^0.21.3",
+    "@cloudflare/workers-types": "^5.20260811.1",
+    "typescript": "^5.7.3",
+    "vitest": "^4.1.0",
+    "wrangler": "^4.123.0"
+  }
+}
