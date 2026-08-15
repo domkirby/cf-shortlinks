@@ -12,6 +12,11 @@ const error = ref<string | null>(null);
 const notice = ref<string | null>(null);
 const editingId = ref<number | null>(null);
 
+const PAGE_SIZE = 25;
+const offset = ref(0);
+const rangeText = () =>
+  total.value === 0 ? 'No links' : `${offset.value + 1}–${offset.value + links.value.length} of ${total.value}`;
+
 const filters = reactive({ q: '', active: '' });
 const form = reactive({
   slug: '',
@@ -27,6 +32,15 @@ const form = reactive({
 
 const themeName = (themeId: number | null) => themes.value.find((t) => t.id === themeId)?.name ?? '—';
 
+/** Only the parts that actually apply — an unremarkable link shows nothing. */
+function secondaryLine(link: Link): string {
+  const parts: string[] = [];
+  if (link.tags.length) parts.push(link.tags.join(', '));
+  if (link.expiresAt) parts.push(`expires ${formatDate(link.expiresAt)}`);
+  if (link.themeId !== null) parts.push(`theme: ${themeName(link.themeId)}`);
+  return parts.join(' · ');
+}
+
 function reportError(err: unknown): void {
   error.value = err instanceof ApiRequestError ? err.message : String(err);
 }
@@ -35,7 +49,12 @@ async function load(): Promise<void> {
   loading.value = true;
   error.value = null;
   try {
-    const page = await api.listLinks({ q: filters.q, active: filters.active, limit: '100' });
+    const page = await api.listLinks({
+      q: filters.q,
+      active: filters.active,
+      limit: String(PAGE_SIZE),
+      offset: String(offset.value),
+    });
     links.value = page.items;
     total.value = page.total;
   } catch (err) {
@@ -43,6 +62,22 @@ async function load(): Promise<void> {
   } finally {
     loading.value = false;
   }
+}
+
+/** A changed search/filter invalidates the current page position. */
+function search(): void {
+  offset.value = 0;
+  void load();
+}
+
+function prevPage(): void {
+  offset.value = Math.max(0, offset.value - PAGE_SIZE);
+  void load();
+}
+
+function nextPage(): void {
+  offset.value += PAGE_SIZE;
+  void load();
 }
 
 async function loadThemes(): Promise<void> {
@@ -229,13 +264,13 @@ const formatDate = (epochMs: number) => new Date(epochMs).toLocaleDateString();
 
   <div class="card">
     <div class="row" style="margin-bottom: 12px">
-      <input v-model="filters.q" placeholder="Search slug or destination" @keyup.enter="load" />
-      <select v-model="filters.active" @change="load">
+      <input v-model="filters.q" placeholder="Search slug or destination" @keyup.enter="search" />
+      <select v-model="filters.active" @change="search">
         <option value="">All</option>
         <option value="true">Active only</option>
         <option value="false">Inactive only</option>
       </select>
-      <button class="secondary" style="max-width: 120px" @click="load">Search</button>
+      <button class="secondary" style="max-width: 120px" @click="search">Search</button>
     </div>
 
     <p v-if="loading" class="empty">Loading…</p>
@@ -245,11 +280,7 @@ const formatDate = (epochMs: number) => new Date(epochMs).toLocaleDateString();
         <tr>
           <th>Slug</th>
           <th>Destination</th>
-          <th>Tags</th>
-          <th>Expires</th>
           <th>State</th>
-          <th>Protected</th>
-          <th>Theme</th>
           <th></th>
         </tr>
       </thead>
@@ -260,34 +291,39 @@ const formatDate = (epochMs: number) => new Date(epochMs).toLocaleDateString();
             <a class="truncate mono" :href="link.destination" target="_blank" rel="noopener noreferrer">
               {{ link.destination }}
             </a>
+            <div v-if="secondaryLine(link)" class="muted" style="font-size: 12px; margin-top: 2px">
+              {{ secondaryLine(link) }}
+            </div>
           </td>
-          <td class="muted">{{ link.tags.join(', ') || '—' }}</td>
-          <td class="muted">{{ link.expiresAt ? formatDate(link.expiresAt) : '—' }}</td>
           <td>
             <span class="pill" :class="link.active ? 'on' : 'off'">
               {{ link.active ? 'active' : 'off' }}
             </span>
+            <span v-if="link.passwordProtected" class="pill on" style="margin-left: 4px">protected</span>
           </td>
           <td>
-            <span class="pill" :class="link.passwordProtected ? 'on' : 'off'">
-              {{ link.passwordProtected ? 'protected' : 'open' }}
-            </span>
-          </td>
-          <td class="muted">{{ themeName(link.themeId) }}</td>
-          <td>
-            <div class="actions">
-              <button class="link" @click="copy(shortUrlFor(link))">Copy</button>
-              <button class="link" @click="startEdit(link)">Edit</button>
-              <button class="link" @click="toggleActive(link)">
-                {{ link.active ? 'Disable' : 'Enable' }}
-              </button>
-              <RouterLink :to="`/links/${link.slug}/stats`">Stats</RouterLink>
-              <button class="link" style="color: var(--danger)" @click="remove(link)">Delete</button>
-            </div>
+            <details class="menu">
+              <summary>⋮</summary>
+              <div class="menu-items">
+                <button type="button" @click="copy(shortUrlFor(link))">Copy short URL</button>
+                <button type="button" @click="startEdit(link)">Edit</button>
+                <button type="button" @click="toggleActive(link)">
+                  {{ link.active ? 'Disable' : 'Enable' }}
+                </button>
+                <RouterLink :to="`/links/${link.slug}/stats`">Stats</RouterLink>
+                <button type="button" class="danger" @click="remove(link)">Delete</button>
+              </div>
+            </details>
           </td>
         </tr>
       </tbody>
     </table>
-    <p class="muted" style="margin: 12px 0 0">{{ total }} link(s)</p>
+    <div class="pagination">
+      <p class="muted" style="margin: 0">{{ rangeText() }}</p>
+      <div class="actions">
+        <button class="secondary" :disabled="offset === 0" @click="prevPage">Prev</button>
+        <button class="secondary" :disabled="offset + links.length >= total" @click="nextPage">Next</button>
+      </div>
+    </div>
   </div>
 </template>

@@ -304,6 +304,79 @@ button.link {
   text-align: center;
 }
 
+/* Overflow (⋮) action menu — a native <details> disclosure, no JS needed. */
+.menu {
+  position: relative;
+  display: inline-block;
+}
+
+.menu > summary {
+  list-style: none;
+  cursor: pointer;
+  color: var(--muted);
+  padding: 2px 8px;
+  border-radius: 6px;
+  font-weight: 700;
+}
+
+.menu > summary::-webkit-details-marker {
+  display: none;
+}
+
+.menu > summary:hover,
+.menu[open] > summary {
+  background: var(--surface-2);
+  color: var(--text);
+}
+
+.menu-items {
+  position: absolute;
+  right: 0;
+  top: calc(100% + 4px);
+  z-index: 10;
+  min-width: 140px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
+  padding: 4px;
+  display: flex;
+  flex-direction: column;
+}
+
+.menu-items button,
+.menu-items a {
+  display: block;
+  width: 100%;
+  text-align: left;
+  background: none;
+  border: none;
+  color: var(--text);
+  padding: 6px 10px;
+  border-radius: 6px;
+  font-weight: 500;
+  font: inherit;
+  text-decoration: none;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.menu-items button:hover,
+.menu-items a:hover {
+  background: var(--surface-2);
+}
+
+.menu-items .danger {
+  color: var(--danger);
+}
+
+.pagination {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 12px;
+}
+
 .grid-2 {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
