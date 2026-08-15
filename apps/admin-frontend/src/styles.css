@@ -90,6 +90,16 @@ nav.tabs a.router-link-active {
   font-size: 13px;
 }
 
+.identity .logout {
+  margin-left: 8px;
+  color: var(--accent);
+  text-decoration: none;
+}
+
+.identity .logout:hover {
+  text-decoration: underline;
+}
+
 .card {
   background: var(--surface);
   border: 1px solid var(--border);

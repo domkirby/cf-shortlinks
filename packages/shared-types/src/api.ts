@@ -1,5 +1,6 @@
 import type { Link } from './link.js';
 import type { Actor } from './access.js';
+import type { Theme } from './theme.js';
 
 export interface ApiError {
   error: {
@@ -37,4 +38,8 @@ export interface ServiceToken {
 
 export interface ListServiceTokensResponse {
   items: ServiceToken[];
+}
+
+export interface ListThemesResponse {
+  items: Theme[];
 }

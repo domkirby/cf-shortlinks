@@ -11,7 +11,7 @@ const SLUG_RE = /^[A-Za-z0-9][A-Za-z0-9_-]{0,63}$/;
  * Paths the redirect worker answers itself. A link on one of these would be
  * created successfully and then never resolve, which is worse than refusing it.
  */
-const RESERVED_SLUGS = new Set(['favicon.ico', 'robots.txt', 'healthz', 'api', '_', 'admin']);
+const RESERVED_SLUGS = new Set(['favicon.ico', 'robots.txt', 'healthz', 'api', '_', 'admin', '_i_']);
 
 const SLUG_ALPHABET = 'abcdefghijkmnopqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ23456789';
 const GENERATED_SLUG_LENGTH = 7;
@@ -80,6 +80,54 @@ export function assertValidTags(tags: unknown): string[] {
   return cleaned;
 }
 
+const HEX_RE = /^[0-9a-f]+$/i;
+
+/**
+ * Validates the client wire format `{salt}:{verifier}` (single colon), both
+ * hex — the shape produced by client-side PBKDF2. Never a plaintext password.
+ */
+export function assertValidPasswordVerifierPayload(value: unknown): string {
+  if (typeof value !== 'string') throw badRequest('passwordVerifier must be a string');
+  const idx = value.indexOf(':');
+  if (idx < 0 || value.indexOf(':', idx + 1) !== -1) {
+    throw badRequest('passwordVerifier must be in `salt:verifier` format (single colon)');
+  }
+  const salt = value.slice(0, idx);
+  const verifier = value.slice(idx + 1);
+  if (!salt || !verifier || !HEX_RE.test(salt) || !HEX_RE.test(verifier)) {
+    throw badRequest('passwordVerifier salt and verifier must be non-empty hex strings');
+  }
+  if (salt.length > 128 || verifier.length > 256) throw badRequest('passwordVerifier is too long');
+  return value;
+}
+
+export function assertValidThemeId(themeId: unknown): number | null {
+  if (themeId === null || themeId === undefined) return null;
+  if (typeof themeId !== 'number' || !Number.isInteger(themeId) || themeId <= 0) {
+    throw badRequest('themeId must be a positive integer or null');
+  }
+  return themeId;
+}
+
+export function assertValidHexColor(color: unknown): string {
+  if (typeof color !== 'string' || !/^#[0-9a-fA-F]{6}$/.test(color.trim())) {
+    throw badRequest('backgroundColor must be a #rrggbb hex color');
+  }
+  return color.trim();
+}
+
+export function assertValidThemeName(name: unknown): string {
+  if (typeof name !== 'string') throw badRequest('name is required');
+  const trimmed = name.trim();
+  if (!trimmed || trimmed.length > 64) throw badRequest('name must be 1-64 characters');
+  return trimmed;
+}
+
+export function assertValidLogoUrl(logoUrl: unknown): string | null {
+  if (logoUrl === undefined || logoUrl === null || logoUrl === '') return null;
+  return assertValidDestination(String(logoUrl));
+}
+
 export function assertValidTokenName(name: unknown): string {
   if (typeof name !== 'string') throw badRequest('name is required');
   const trimmed = name.trim();
@@ -113,6 +161,9 @@ export interface ParsedCreate {
   expiresAt: number | null;
   tags: string[];
   active: boolean;
+  /** Raw, unhashed client payload — hashing is async, done in the route handler. */
+  passwordVerifierPayload?: string;
+  themeId: number | null;
 }
 
 export function parseCreateLink(body: unknown, now: number): ParsedCreate {
@@ -132,6 +183,9 @@ export function parseCreateLink(body: unknown, now: number): ParsedCreate {
     expiresAt: assertValidExpiry(input.expiresAt, now),
     tags: assertValidTags(input.tags),
     active: input.active === undefined ? true : Boolean(input.active),
+    passwordVerifierPayload:
+      input.passwordVerifier === undefined ? undefined : assertValidPasswordVerifierPayload(input.passwordVerifier),
+    themeId: assertValidThemeId(input.themeId),
   };
 }
 
@@ -141,6 +195,9 @@ export interface ParsedUpdate {
   expiresAt?: number | null;
   tags?: string[];
   active?: boolean;
+  /** Raw, unhashed client payload; `null` explicitly clears protection. */
+  passwordVerifierPayload?: string | null;
+  themeId?: number | null;
 }
 
 export function parseUpdateLink(body: unknown, now: number): ParsedUpdate {
@@ -155,6 +212,11 @@ export function parseUpdateLink(body: unknown, now: number): ParsedUpdate {
   if ('expiresAt' in input) update.expiresAt = assertValidExpiry(input.expiresAt, now);
   if ('tags' in input) update.tags = assertValidTags(input.tags);
   if ('active' in input) update.active = Boolean(input.active);
+  if ('passwordVerifier' in input) {
+    update.passwordVerifierPayload =
+      input.passwordVerifier === null ? null : assertValidPasswordVerifierPayload(input.passwordVerifier);
+  }
+  if ('themeId' in input) update.themeId = assertValidThemeId(input.themeId);
 
   if (Object.keys(update).length === 0) {
     throw badRequest('No updatable fields present');

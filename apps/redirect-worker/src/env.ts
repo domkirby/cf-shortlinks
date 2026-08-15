@@ -18,4 +18,11 @@ export interface Env {
 
   /** Redirect status for resolved slugs. Default 302. */
   REDIRECT_STATUS?: string;
+
+  /**
+   * Short-link apex domain, used to build the interactive-link unlock-page
+   * URL for password-protected links resolved via the D1 fallback. Mirrors
+   * admin-api's var of the same name.
+   */
+  SHORT_DOMAIN?: string;
 }

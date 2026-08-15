@@ -5,6 +5,7 @@ export interface D1Row {
   destination: string;
   expires_at: number | null;
   active: number;
+  password_protected?: number;
 }
 
 export interface TestHarness {
@@ -21,7 +22,7 @@ export interface TestHarness {
 export interface HarnessOptions {
   kv?: Record<string, string>;
   rows?: Record<string, D1Row>;
-  vars?: Partial<Pick<Env, 'DEFAULT_REDIRECT_URL' | 'KV_TTL_SECONDS' | 'REDIRECT_STATUS'>>;
+  vars?: Partial<Pick<Env, 'DEFAULT_REDIRECT_URL' | 'KV_TTL_SECONDS' | 'REDIRECT_STATUS' | 'SHORT_DOMAIN'>>;
   d1Throws?: boolean;
 }
 
@@ -57,6 +58,7 @@ export function createHarness(options: HarnessOptions = {}): TestHarness {
       }),
     },
     ANALYTICS: { writeDataPoint },
+    SHORT_DOMAIN: 'domk.pro',
     ...options.vars,
   } as unknown as Env;
 

@@ -9,8 +9,13 @@ export interface Link {
   /** Epoch ms, or null for "never expires". */
   expiresAt: number | null;
   tags: string[];
+  passwordProtected: boolean;
+  /** Unlock-page theme to use when password protected. Null means the default look. */
+  themeId: number | null;
   createdAt: number;
   updatedAt: number;
+  // No password field here, ever — the stored verifier is write-only and
+  // never round-trips back through the API. See CreateLinkInput/UpdateLinkInput.
 }
 
 /**
@@ -34,6 +39,15 @@ export interface CreateLinkInput {
   expiresAt?: number | null;
   tags?: string[];
   active?: boolean;
+  /**
+   * `{pbkdf_salt}:{pbkdf_verifier}` (single colon, both hex) as produced by
+   * client-side PBKDF2 (see the frontend's `pbkdf2.ts`) — never a plaintext
+   * password. Presence implies the link becomes password protected; omit to
+   * leave it unprotected. The server re-hashes this once (HMAC-SHA256, keyed
+   * by slug) before storing it — it is never round-tripped back out.
+   */
+  passwordVerifier?: string;
+  themeId?: number | null;
 }
 
 export interface UpdateLinkInput {
@@ -42,6 +56,13 @@ export interface UpdateLinkInput {
   expiresAt?: number | null;
   tags?: string[];
   active?: boolean;
+  /**
+   * Same wire format as {@link CreateLinkInput.passwordVerifier}. Omit to
+   * leave the existing password untouched; set to `null` to remove password
+   * protection entirely.
+   */
+  passwordVerifier?: string | null;
+  themeId?: number | null;
 }
 
 export interface ListLinksQuery {

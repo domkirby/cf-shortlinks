@@ -8,6 +8,7 @@ import links from './routes/links.js';
 import stats from './routes/stats.js';
 import tokens from './routes/tokens.js';
 import adminsRoutes from './routes/admins.js';
+import themesRoutes from './routes/themes.js';
 
 /**
  * Admin API for links.domk.pro.
@@ -46,8 +47,11 @@ app.use('/api/tokens', requireOwner());
 app.use('/api/tokens/*', requireOwner());
 app.use('/api/admins', requireOwner());
 app.use('/api/admins/*', requireOwner());
+app.use('/api/themes', requireOwner());
+app.use('/api/themes/*', requireOwner());
 app.route('/api/tokens', tokens);
 app.route('/api/admins', adminsRoutes);
+app.route('/api/themes', themesRoutes);
 
 app.notFound((c) => {
   const body: ApiError = { error: { code: 'not_found', message: `No route for ${c.req.path}` } };

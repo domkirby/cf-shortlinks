@@ -171,6 +171,103 @@ describe('PATCH /api/links/:id', () => {
   });
 });
 
+describe('password protection', () => {
+  it('protects a link on create and substitutes the KV destination', async () => {
+    const { link } = await createLink({
+      slug: 'secret',
+      destination: DEST,
+      passwordVerifier: 'aabbcc:ddeeff',
+    });
+
+    expect(link.passwordProtected).toBe(true);
+    expect(await kvRecord('secret')).toEqual({ d: 'https://domk.pro/_i_/pw/secret' });
+  });
+
+  it('never returns the stored verifier', async () => {
+    const res = await json('/api/links', 'POST', {
+      slug: 'secret',
+      destination: DEST,
+      passwordVerifier: 'aabbcc:ddeeff',
+    });
+    const text = await res.text();
+
+    expect(text).not.toContain('passwordVerifier');
+    expect(text).not.toContain('ddeeff');
+  });
+
+  it('hashes against the generated slug when none is given up front', async () => {
+    const { link } = await createLink({ destination: DEST, passwordVerifier: 'aabbcc:ddeeff' });
+
+    expect(link.passwordProtected).toBe(true);
+    expect(await kvRecord(link.slug)).toEqual({ d: `https://domk.pro/_i_/pw/${link.slug}` });
+  });
+
+  it('an unprotected link caches its real destination as usual', async () => {
+    const { link } = await createLink({ slug: 'open', destination: DEST });
+
+    expect(link.passwordProtected).toBe(false);
+    expect(await kvRecord('open')).toEqual({ d: DEST });
+  });
+
+  it('rejects a malformed passwordVerifier payload', async () => {
+    const res = await json('/api/links', 'POST', {
+      slug: 'bad',
+      destination: DEST,
+      passwordVerifier: 'not-hex-colon-format',
+    });
+    expect(res.status).toBe(400);
+  });
+
+  it('turns protection on via PATCH and swaps the KV destination', async () => {
+    const { link } = await createLink({ slug: 'gh', destination: DEST });
+
+    await json(`/api/links/${link.id}`, 'PATCH', { passwordVerifier: 'aabbcc:ddeeff' });
+
+    expect(await kvRecord('gh')).toEqual({ d: 'https://domk.pro/_i_/pw/gh' });
+  });
+
+  it('clears protection via PATCH with passwordVerifier: null', async () => {
+    const { link } = await createLink({ slug: 'gh', destination: DEST, passwordVerifier: 'aabbcc:ddeeff' });
+
+    const res = await json(`/api/links/${link.id}`, 'PATCH', { passwordVerifier: null });
+
+    expect((await res.json() as LinkResponse).link.passwordProtected).toBe(false);
+    expect(await kvRecord('gh')).toEqual({ d: DEST });
+  });
+
+  it('leaving passwordVerifier out of a PATCH keeps the existing password', async () => {
+    const { link } = await createLink({ slug: 'gh', destination: DEST, passwordVerifier: 'aabbcc:ddeeff' });
+
+    await json(`/api/links/${link.id}`, 'PATCH', { destination: 'https://new.example.com' });
+
+    const res = await call(`/api/links/${link.id}`);
+    expect(((await res.json()) as LinkResponse).link.passwordProtected).toBe(true);
+    expect(await kvRecord('gh')).toEqual({ d: 'https://domk.pro/_i_/pw/gh' });
+  });
+
+  it('re-hashes against the new slug when protection and rename happen together', async () => {
+    const { link } = await createLink({ slug: 'old', destination: DEST });
+
+    await json(`/api/links/${link.id}`, 'PATCH', { slug: 'new', passwordVerifier: 'aabbcc:ddeeff' });
+
+    expect(await kvRecord('old')).toBeNull();
+    expect(await kvRecord('new')).toEqual({ d: 'https://domk.pro/_i_/pw/new' });
+  });
+});
+
+describe('themeId', () => {
+  it('assigns and clears a theme', async () => {
+    const themeRes = await json('/api/themes', 'POST', { name: 'Dark', backgroundColor: '#000000' });
+    const theme = (await themeRes.json()) as { id: number };
+
+    const { link } = await createLink({ slug: 'gh', destination: DEST, themeId: theme.id });
+    expect(link.themeId).toBe(theme.id);
+
+    const cleared = await json(`/api/links/${link.id}`, 'PATCH', { themeId: null });
+    expect(((await cleared.json()) as LinkResponse).link.themeId).toBeNull();
+  });
+});
+
 describe('DELETE /api/links/:id', () => {
   it('removes the row and the cache entry', async () => {
     const { link } = await createLink({ slug: 'gh', destination: DEST });

@@ -1,9 +1,11 @@
 <script setup lang="ts">
 import { onMounted, reactive, ref } from 'vue';
-import type { Link } from '@domk/shared-types';
+import type { CreateLinkInput, Link, Theme, UpdateLinkInput } from '@domk/shared-types';
 import { api, ApiRequestError } from '../api';
+import { derivePasswordPayload } from '../pbkdf2';
 
 const links = ref<Link[]>([]);
+const themes = ref<Theme[]>([]);
 const total = ref(0);
 const loading = ref(false);
 const error = ref<string | null>(null);
@@ -17,7 +19,13 @@ const form = reactive({
   expiresAt: '',
   tags: '',
   active: true,
+  passwordEnabled: false,
+  /** In-memory only — never sent as-is, only the PBKDF2-derived payload is. */
+  passwordPlaintext: '',
+  themeId: null as number | null,
 });
+
+const themeName = (themeId: number | null) => themes.value.find((t) => t.id === themeId)?.name ?? '—';
 
 function reportError(err: unknown): void {
   error.value = err instanceof ApiRequestError ? err.message : String(err);
@@ -37,11 +45,31 @@ async function load(): Promise<void> {
   }
 }
 
-onMounted(load);
+async function loadThemes(): Promise<void> {
+  try {
+    themes.value = (await api.listThemes()).items;
+  } catch {
+    // Non-fatal: the form still works without theme options, just with none to pick.
+  }
+}
+
+onMounted(() => {
+  void load();
+  void loadThemes();
+});
 
 function resetForm(): void {
   editingId.value = null;
-  Object.assign(form, { slug: '', destination: '', expiresAt: '', tags: '', active: true });
+  Object.assign(form, {
+    slug: '',
+    destination: '',
+    expiresAt: '',
+    tags: '',
+    active: true,
+    passwordEnabled: false,
+    passwordPlaintext: '',
+    themeId: null,
+  });
 }
 
 function startEdit(link: Link): void {
@@ -53,6 +81,11 @@ function startEdit(link: Link): void {
     expiresAt: link.expiresAt ? toLocalInput(link.expiresAt) : '',
     tags: link.tags.join(', '),
     active: link.active,
+    // The API never returns the password itself (write-only) — only whether
+    // one is set. Leaving the password field blank on save keeps it as-is.
+    passwordEnabled: link.passwordProtected,
+    passwordPlaintext: '',
+    themeId: link.themeId,
   });
 }
 
@@ -66,7 +99,7 @@ async function submit(): Promise<void> {
   error.value = null;
   notice.value = null;
 
-  const payload = {
+  const payload: Record<string, unknown> = {
     slug: form.slug.trim() || undefined,
     destination: form.destination.trim(),
     expiresAt: form.expiresAt ? new Date(form.expiresAt).getTime() : null,
@@ -75,12 +108,26 @@ async function submit(): Promise<void> {
       .map((t) => t.trim())
       .filter(Boolean),
     active: form.active,
+    themeId: form.themeId,
   };
+
+  if (form.passwordEnabled) {
+    if (form.passwordPlaintext) {
+      payload.passwordVerifier = await derivePasswordPayload(form.passwordPlaintext);
+    } else if (!editingId.value) {
+      error.value = 'Enter a password to protect a new link.';
+      return;
+    }
+    // else: editing, protection stays on, password left unchanged — omit the field entirely.
+  } else if (editingId.value) {
+    // Explicitly unchecked on an existing link — clear the stored password.
+    payload.passwordVerifier = null;
+  }
 
   try {
     const result = editingId.value
-      ? await api.updateLink(editingId.value, payload)
-      : await api.createLink(payload);
+      ? await api.updateLink(editingId.value, payload as unknown as UpdateLinkInput)
+      : await api.createLink(payload as unknown as CreateLinkInput);
     notice.value = `Saved ${result.shortUrl}`;
     resetForm();
     await load();
@@ -152,6 +199,28 @@ const formatDate = (epochMs: number) => new Date(epochMs).toLocaleDateString();
         <input id="active" v-model="form.active" type="checkbox" style="width: auto" />
       </div>
     </div>
+    <div class="row">
+      <div class="field" style="max-width: 200px">
+        <label for="password-enabled">Password protect this link</label>
+        <input
+          id="password-enabled"
+          v-model="form.passwordEnabled"
+          type="checkbox"
+          style="width: auto"
+        />
+      </div>
+      <div class="field" v-if="form.passwordEnabled">
+        <label for="password">Password{{ editingId ? ' (leave blank to keep current)' : '' }}</label>
+        <input id="password" v-model="form.passwordPlaintext" type="password" placeholder="••••••••" />
+      </div>
+      <div class="field">
+        <label for="theme">Theme (for the unlock page)</label>
+        <select id="theme" v-model="form.themeId">
+          <option :value="null">Default</option>
+          <option v-for="theme in themes" :key="theme.id" :value="theme.id">{{ theme.name }}</option>
+        </select>
+      </div>
+    </div>
     <div class="actions">
       <button type="submit">{{ editingId ? 'Save changes' : 'Create link' }}</button>
       <button v-if="editingId" type="button" class="secondary" @click="resetForm">Cancel</button>
@@ -179,6 +248,8 @@ const formatDate = (epochMs: number) => new Date(epochMs).toLocaleDateString();
           <th>Tags</th>
           <th>Expires</th>
           <th>State</th>
+          <th>Protected</th>
+          <th>Theme</th>
           <th></th>
         </tr>
       </thead>
@@ -197,6 +268,12 @@ const formatDate = (epochMs: number) => new Date(epochMs).toLocaleDateString();
               {{ link.active ? 'active' : 'off' }}
             </span>
           </td>
+          <td>
+            <span class="pill" :class="link.passwordProtected ? 'on' : 'off'">
+              {{ link.passwordProtected ? 'protected' : 'open' }}
+            </span>
+          </td>
+          <td class="muted">{{ themeName(link.themeId) }}</td>
           <td>
             <div class="actions">
               <button class="link" @click="copy(shortUrlFor(link))">Copy</button>

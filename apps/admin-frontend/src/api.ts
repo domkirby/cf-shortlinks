@@ -1,14 +1,18 @@
 import type {
   ApiError,
   CreateLinkInput,
+  CreateThemeInput,
   LinkResponse,
   LinkStats,
   ListLinksResponse,
   ListServiceTokensResponse,
+  ListThemesResponse,
   ServiceToken,
   StatsBreakdownRow,
   StatsPoint,
+  Theme,
   UpdateLinkInput,
+  UpdateThemeInput,
   WhoAmIResponse,
 } from '@domk/shared-types';
 
@@ -112,4 +116,11 @@ export const api = {
     request<AdminRecord>('/admins', { method: 'POST', body: JSON.stringify({ email, role }) }),
   deleteAdmin: (email: string) =>
     request<void>(`/admins/${encodeURIComponent(email)}`, { method: 'DELETE' }),
+
+  listThemes: () => request<ListThemesResponse>('/themes'),
+  createTheme: (input: CreateThemeInput) =>
+    request<Theme>('/themes', { method: 'POST', body: JSON.stringify(input) }),
+  updateTheme: (id: number, input: UpdateThemeInput) =>
+    request<Theme>(`/themes/${id}`, { method: 'PATCH', body: JSON.stringify(input) }),
+  deleteTheme: (id: number) => request<void>(`/themes/${id}`, { method: 'DELETE' }),
 };

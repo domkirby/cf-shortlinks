@@ -80,6 +80,37 @@ importers:
         specifier: ^4.123.0
         version: 4.123.0(@cloudflare/workers-types@5.20260814.1)
 
+  apps/interactive-link:
+    dependencies:
+      '@domk/db-schema':
+        specifier: workspace:*
+        version: link:../../packages/db-schema
+      '@domk/shared-types':
+        specifier: workspace:*
+        version: link:../../packages/shared-types
+      drizzle-orm:
+        specifier: ^0.38.4
+        version: 0.38.4(@cloudflare/workers-types@5.20260814.1)
+      hono:
+        specifier: ^4.6.20
+        version: 4.13.2
+    devDependencies:
+      '@cloudflare/vitest-pool-workers':
+        specifier: ^0.21.3
+        version: 0.21.3(@cloudflare/workers-types@5.20260814.1)(@vitest/runner@4.1.10)(@vitest/snapshot@4.1.10)(vitest@4.1.10(vite@6.4.3))
+      '@cloudflare/workers-types':
+        specifier: ^5.20260811.1
+        version: 5.20260814.1
+      typescript:
+        specifier: ^5.7.3
+        version: 5.9.3
+      vitest:
+        specifier: ^4.1.0
+        version: 4.1.10(vite@6.4.3)
+      wrangler:
+        specifier: ^4.123.0
+        version: 4.123.0(@cloudflare/workers-types@5.20260814.1)
+
   apps/redirect-worker:
     dependencies:
       '@domk/shared-types':

@@ -16,6 +16,7 @@
     "dev:redirect": "pnpm --filter @domk/redirect-worker dev",
     "dev:api": "pnpm --filter @domk/admin-api dev",
     "dev:frontend": "pnpm --filter @domk/admin-frontend dev",
+    "dev:interactive": "pnpm --filter @domk/interactive-link dev",
     "db:generate": "pnpm --filter @domk/db-schema generate",
     "db:migrate:local": "pnpm --filter @domk/db-schema migrate:local",
     "db:migrate:remote": "pnpm --filter @domk/db-schema migrate:remote"

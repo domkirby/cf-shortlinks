@@ -12,6 +12,7 @@ const routes: RouteRecordRaw[] = [
   { path: '/stats', name: 'stats', component: () => import('./views/StatsView.vue') },
   { path: '/tokens', name: 'tokens', component: () => import('./views/TokensView.vue') },
   { path: '/admins', name: 'admins', component: () => import('./views/AdminsView.vue') },
+  { path: '/themes', name: 'themes', component: () => import('./views/ThemesView.vue') },
   { path: '/:pathMatch(.*)*', redirect: '/links' },
 ];
 

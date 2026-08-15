@@ -3,8 +3,13 @@ import {
   assertValidDestination,
   assertValidEmail,
   assertValidExpiry,
+  assertValidHexColor,
+  assertValidLogoUrl,
+  assertValidPasswordVerifierPayload,
   assertValidSlug,
   assertValidTags,
+  assertValidThemeId,
+  assertValidThemeName,
   assertValidTokenName,
   generateSlug,
   parseCreateLink,
@@ -31,12 +36,81 @@ describe('assertValidSlug', () => {
     expect(() => assertValidSlug(slug)).toThrow();
   });
 
-  it.each(['favicon.ico', 'robots.txt', 'healthz', 'API'])(
+  it.each(['favicon.ico', 'robots.txt', 'healthz', 'API', '_i_'])(
     'rejects the reserved path %s, which the worker answers itself',
     (slug) => {
       expect(() => assertValidSlug(slug)).toThrow();
     },
   );
+});
+
+describe('assertValidPasswordVerifierPayload', () => {
+  it('accepts a valid salt:verifier hex pair', () => {
+    expect(assertValidPasswordVerifierPayload('aabbcc:ddeeff')).toBe('aabbcc:ddeeff');
+  });
+
+  it.each([
+    ['no colon', 'aabbccddeeff'],
+    ['two colons', 'aa:bb:cc'],
+    ['non-hex salt', 'zz:ddeeff'],
+    ['non-hex verifier', 'aabbcc:zzzz'],
+    ['empty salt', ':ddeeff'],
+    ['empty verifier', 'aabbcc:'],
+    ['not a string', 123],
+  ])('rejects %s', (_label, value) => {
+    expect(() => assertValidPasswordVerifierPayload(value)).toThrow();
+  });
+});
+
+describe('assertValidThemeId', () => {
+  it('treats null and undefined as no theme', () => {
+    expect(assertValidThemeId(null)).toBeNull();
+    expect(assertValidThemeId(undefined)).toBeNull();
+  });
+
+  it('accepts a positive integer', () => {
+    expect(assertValidThemeId(3)).toBe(3);
+  });
+
+  it.each([0, -1, 1.5, 'x'])('rejects %s', (value) => {
+    expect(() => assertValidThemeId(value)).toThrow();
+  });
+});
+
+describe('assertValidHexColor', () => {
+  it('accepts a #rrggbb color', () => {
+    expect(assertValidHexColor('#0f172a')).toBe('#0f172a');
+  });
+
+  it.each(['blue', '#fff', '0f172a', '#gggggg'])('rejects %s', (value) => {
+    expect(() => assertValidHexColor(value)).toThrow();
+  });
+});
+
+describe('assertValidThemeName', () => {
+  it('trims', () => {
+    expect(assertValidThemeName(' Default ')).toBe('Default');
+  });
+
+  it.each(['', ' ', 'x'.repeat(65)])('rejects %s', (value) => {
+    expect(() => assertValidThemeName(value)).toThrow();
+  });
+});
+
+describe('assertValidLogoUrl', () => {
+  it('treats absent/empty as no logo', () => {
+    expect(assertValidLogoUrl(undefined)).toBeNull();
+    expect(assertValidLogoUrl(null)).toBeNull();
+    expect(assertValidLogoUrl('')).toBeNull();
+  });
+
+  it('accepts an http(s) URL', () => {
+    expect(assertValidLogoUrl('https://example.com/logo.png')).toBe('https://example.com/logo.png');
+  });
+
+  it('rejects a javascript: URL', () => {
+    expect(() => assertValidLogoUrl('javascript:alert(1)')).toThrow();
+  });
 });
 
 describe('assertValidDestination', () => {
@@ -110,6 +184,7 @@ describe('parseCreateLink', () => {
       expiresAt: null,
       tags: [],
       active: true,
+      themeId: null,
     });
   });
 

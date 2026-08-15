@@ -43,6 +43,42 @@ describe('redirect worker', () => {
     expect(h.kvPut.mock.calls[0]?.[2]).toEqual({ expirationTtl: 86_400 });
   });
 
+  it('sends a password-protected link to the interactive unlock page instead of its real destination', async () => {
+    const h = createHarness({
+      rows: {
+        secret: {
+          destination: 'https://real-destination.example.com',
+          expires_at: null,
+          active: 1,
+          password_protected: 1,
+        },
+      },
+    });
+
+    const res = await worker.fetch(get('/secret'), h.env, h.ctx);
+    await h.settle();
+
+    expect(res.status).toBe(302);
+    expect(res.headers.get('Location')).toBe('https://domk.pro/_i_/pw/secret');
+    // Self-heal caches the substituted URL too, never the real destination.
+    expect(h.kvPut).toHaveBeenCalledOnce();
+    expect(JSON.parse(h.kvPut.mock.calls[0]?.[1] as string)).toEqual({
+      d: 'https://domk.pro/_i_/pw/secret',
+    });
+  });
+
+  it('leaves an unprotected D1 fallback link unaffected by the new column', async () => {
+    const h = createHarness({
+      rows: {
+        open: { destination: 'https://open.example.com', expires_at: null, active: 1, password_protected: 0 },
+      },
+    });
+
+    const res = await worker.fetch(get('/open'), h.env, h.ctx);
+
+    expect(res.headers.get('Location')).toBe('https://open.example.com');
+  });
+
   it('never caches past a link expiry', async () => {
     const expiresAt = Date.now() + 2 * HOUR;
     const h = createHarness({
