@@ -33,5 +33,5 @@ database_name = "domk-links"
 database_id = "7443e9ed-1854-4f42-b1b0-682c14e87026"
 
 [[analytics_engine_datasets]]
-binding = "domkpro_clicks"
+binding = "ANALYTICS"
 dataset = "domkpro_clicks"
