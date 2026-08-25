@@ -11,7 +11,7 @@ import adminsRoutes from './routes/admins.js';
 import themesRoutes from './routes/themes.js';
 
 /**
- * Admin API for links.domk.pro.
+ * Admin API for links.example.com.
  *
  * Sits behind Cloudflare Access, which authenticates both humans and service
  * tokens at the edge before anything here runs. Low-QPS and authenticated, so

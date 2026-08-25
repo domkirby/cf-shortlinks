@@ -12,7 +12,10 @@ const migrations = await readD1Migrations(path.join(here, '../../packages/db-sch
 export default defineConfig({
   plugins: [
     cloudflareTest({
-      wrangler: { configPath: './wrangler.toml' },
+      // wrangler.test.jsonc is a committed, test-only config (see that file) —
+      // not the gitignored, CI-rendered wrangler.jsonc — so tests run without
+      // needing scripts/render-wrangler.mjs first.
+      wrangler: { configPath: './wrangler.test.jsonc' },
       miniflare: {
         bindings: {
           TEST_MIGRATIONS: migrations,

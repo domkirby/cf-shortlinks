@@ -1,5 +1,14 @@
 name: CI
 
+# Build/test gate. Runs on every pull request and on pushes to main, so a
+# change is known to compile and pass its tests before it can be merged (and,
+# via the deploy workflow's own steps, before it can reach Cloudflare).
+#
+# The `check` job needs no secrets — nothing in it talks to Cloudflare. The
+# `deploy-config` job does read the deployment secrets and variables, but only
+# to check whether they are set; it never prints a value and never contacts
+# Cloudflare either.
+
 on:
   push:
     branches: [main]
@@ -26,3 +35,105 @@ jobs:
       - run: pnpm test
 
       - run: pnpm --filter @domk/admin-frontend build
+        env:
+          # Only needs to be present and syntactically valid here — the real
+          # value is baked in at deploy time by deploy.yml, not now.
+          VITE_SHORT_DOMAIN: example.com
+          VITE_ADMIN_DOMAIN: links.example.com
+
+      # Guards scripts/render-wrangler.mjs and all four committed
+      # wrangler.jsonc.example files. Pure node:test — no dependencies.
+      - run: node --test scripts/render-wrangler.test.mjs
+
+  # Fails the PR when the deployment secrets/variables that deploy.yml needs
+  # are missing, so a misconfiguration surfaces before merge instead of as a
+  # red deploy on main afterwards. Reads secrets only to test them for
+  # emptiness — every value below is compared to '' in the expression, so what
+  # reaches the runner is a boolean, never the secret.
+  deploy-config:
+    name: Deploy configuration
+    # Secrets are not provided to workflows triggered by a pull request from a
+    # fork, so this can only run on PRs from branches in this repository —
+    # otherwise every fork PR would fail on secrets it was never given. A
+    # forker gets the same check on their own PRs, against their own secrets,
+    # in their own fork.
+    if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Check required secrets and variables
+        env:
+          # Booleans, not values.
+          HAS_CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN != '' }}
+          HAS_CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID != '' }}
+          HAS_CF_ANALYTICS_API_TOKEN: ${{ secrets.CF_ANALYTICS_API_TOKEN != '' }}
+          BASE_DOMAIN: ${{ vars.BASE_DOMAIN }}
+          DEFAULT_REDIRECT_URL: ${{ vars.DEFAULT_REDIRECT_URL }}
+          ACCESS_TEAM_DOMAIN: ${{ vars.ACCESS_TEAM_DOMAIN }}
+          ACCESS_AUD: ${{ vars.ACCESS_AUD }}
+          CF_ACCOUNT_ID: ${{ vars.CF_ACCOUNT_ID }}
+          D1_DATABASE_ID: ${{ vars.D1_DATABASE_ID }}
+          KV_NAMESPACE_ID: ${{ vars.KV_NAMESPACE_ID }}
+        run: |
+          set -uo pipefail
+          problems=0
+
+          # Report everything that is wrong in one run — fixing these means
+          # visiting the repository settings, so a list beats one-at-a-time.
+          fail() { echo "::error::$1"; problems=$((problems + 1)); }
+
+          need_secret() {
+            [ "$2" = "true" ] || fail "Missing repository secret $1. See DEPLOYMENT.md."
+          }
+          need_var() {
+            [ -n "$2" ] || fail "Missing repository variable $1. See DEPLOYMENT.md."
+          }
+
+          need_secret CLOUDFLARE_API_TOKEN "$HAS_CLOUDFLARE_API_TOKEN"
+          need_secret CLOUDFLARE_ACCOUNT_ID "$HAS_CLOUDFLARE_ACCOUNT_ID"
+          need_secret CF_ANALYTICS_API_TOKEN "$HAS_CF_ANALYTICS_API_TOKEN"
+
+          need_var BASE_DOMAIN "$BASE_DOMAIN"
+          need_var DEFAULT_REDIRECT_URL "$DEFAULT_REDIRECT_URL"
+          need_var ACCESS_TEAM_DOMAIN "$ACCESS_TEAM_DOMAIN"
+          need_var ACCESS_AUD "$ACCESS_AUD"
+          need_var CF_ACCOUNT_ID "$CF_ACCOUNT_ID"
+          need_var D1_DATABASE_ID "$D1_DATABASE_ID"
+          need_var KV_NAMESPACE_ID "$KV_NAMESPACE_ID"
+
+          if [ "$problems" -gt 0 ]; then
+            echo "::error::$problems deployment setting(s) missing — deploy.yml would fail on main. Set them under Settings → Secrets and variables → Actions."
+            exit 1
+          fi
+          echo "All required deployment secrets and variables are set."
+
+      # Runs the real renderer against the real values for all four apps, so
+      # this fails for the same reasons deploy.yml would rather than by
+      # reimplementing its rules.
+      - name: Render all four configs with the live values
+        env:
+          BASE_DOMAIN: ${{ vars.BASE_DOMAIN }}
+          ADMIN_SUBDOMAIN: ${{ vars.ADMIN_SUBDOMAIN }}
+          DEFAULT_REDIRECT_URL: ${{ vars.DEFAULT_REDIRECT_URL }}
+          ACCESS_TEAM_DOMAIN: ${{ vars.ACCESS_TEAM_DOMAIN }}
+          ACCESS_AUD: ${{ vars.ACCESS_AUD }}
+          CF_ACCOUNT_ID: ${{ vars.CF_ACCOUNT_ID }}
+          ANALYTICS_DATASET: ${{ vars.ANALYTICS_DATASET }}
+          D1_DATABASE_NAME: ${{ vars.D1_DATABASE_NAME }}
+          D1_DATABASE_ID: ${{ vars.D1_DATABASE_ID }}
+          KV_NAMESPACE_ID: ${{ vars.KV_NAMESPACE_ID }}
+          KV_TTL_SECONDS: ${{ vars.KV_TTL_SECONDS }}
+          REDIRECT_STATUS: ${{ vars.REDIRECT_STATUS }}
+          CF_WORKER_NAME_REDIRECT: ${{ vars.CF_WORKER_NAME_REDIRECT }}
+          CF_WORKER_NAME_ADMIN_API: ${{ vars.CF_WORKER_NAME_ADMIN_API }}
+          CF_WORKER_NAME_INTERACTIVE_LINK: ${{ vars.CF_WORKER_NAME_INTERACTIVE_LINK }}
+          CF_WORKER_NAME_ADMIN_FRONTEND: ${{ vars.CF_WORKER_NAME_ADMIN_FRONTEND }}
+        run: |
+          node scripts/render-wrangler.mjs redirect-worker --require-all
+          node scripts/render-wrangler.mjs interactive-link --require-all
+          node scripts/render-wrangler.mjs admin-api --require-all
+          node scripts/render-wrangler.mjs admin-frontend --require-all

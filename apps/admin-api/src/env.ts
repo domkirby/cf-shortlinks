@@ -8,7 +8,7 @@ export interface Env {
 
   /** Zero Trust team domain, e.g. "acme" or "acme.cloudflareaccess.com". */
   ACCESS_TEAM_DOMAIN: string;
-  /** AUD tag of the links.domk.pro Access application. */
+  /** AUD tag of the links.example.com Access application. */
   ACCESS_AUD: string;
 
   /** Host the short links live on, used to build shortUrl in responses. */

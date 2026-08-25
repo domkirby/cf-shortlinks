@@ -1,0 +1,19 @@
+// Test-only Wrangler config for @cloudflare/vitest-pool-workers, committed
+// (unlike wrangler.jsonc, which is gitignored and CI-rendered). Only used to
+// discover binding names/types for the local D1/KV emulation miniflare
+// spins up per test run — the placeholder ids below are irrelevant there,
+// so there is no need to render this from wrangler.jsonc.example first.
+{
+  "name": "admin-api-test",
+  "main": "src/index.ts",
+  "compatibility_date": "2025-01-15",
+  "compatibility_flags": ["nodejs_compat"],
+
+  "d1_databases": [
+    { "binding": "DB", "database_name": "test-db", "database_id": "00000000-0000-0000-0000-000000000000" }
+  ],
+
+  "kv_namespaces": [
+    { "binding": "LINKS", "id": "test-kv" }
+  ]
+}

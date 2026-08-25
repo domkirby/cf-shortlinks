@@ -12,13 +12,16 @@ const migrations = await readD1Migrations(path.join(here, '../../packages/db-sch
 export default defineConfig({
   plugins: [
     cloudflareTest({
-      wrangler: { configPath: './wrangler.toml' },
+      // wrangler.test.jsonc is a committed, test-only config (see that file) —
+      // not the gitignored, CI-rendered wrangler.jsonc — so tests run without
+      // needing scripts/render-wrangler.mjs first.
+      wrangler: { configPath: './wrangler.test.jsonc' },
       miniflare: {
         bindings: {
           TEST_MIGRATIONS: migrations,
           ACCESS_TEAM_DOMAIN: 'testteam',
           ACCESS_AUD: 'test-aud',
-          SHORT_DOMAIN: 'domk.pro',
+          SHORT_DOMAIN: 'example.com',
           CF_ACCOUNT_ID: 'test-account',
           CF_ANALYTICS_API_TOKEN: 'test-token',
           // Only takes effect on a loopback hostname — tests that exercise

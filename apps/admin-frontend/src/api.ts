@@ -31,7 +31,7 @@ export class ApiRequestError extends Error {
 }
 
 /**
- * The SPA and the API share the links.domk.pro origin, so the Access session
+ * The SPA and the API share the same admin origin, so the Access session
  * cookie rides along on its own — there is no token for this app to hold.
  *
  * A 401 here means Access itself expired rather than anything about the app

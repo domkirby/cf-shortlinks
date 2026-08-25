@@ -3,7 +3,7 @@
 # There is no Access proxy in front of a local dev server, so there is no JWT
 # to verify. DEV_BYPASS_AUTH assumes an owner identity instead — it only takes
 # effect on a loopback hostname, so leaving it set can't authenticate a real
-# request to links.domk.pro.
+# request to your admin hostname in production.
 DEV_BYPASS_AUTH=1
 DEV_ACTOR_EMAIL=you@example.com
 

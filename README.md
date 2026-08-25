@@ -1,14 +1,20 @@
-# domk.pro — Cloudflare-native link shortener
+# CF Shortlinks
 
-Self-hosted replacement for short.io. Workers for compute, KV for the hot redirect
-path, D1 as source of truth, Analytics Engine for click telemetry, Cloudflare Access
-for both human and machine auth on the admin surface.
+Self-hosted, Cloudflare-native link shortener — a replacement for short.io you deploy to your
+own account and domain. Workers for compute, KV for the hot redirect path, D1 as source of
+truth, Analytics Engine for click telemetry, Cloudflare Access for both human and machine auth
+on the admin surface.
 
-Two trust boundaries:
+**Forking this?** See [`DEPLOYMENT.md`](./DEPLOYMENT.md) for the full setup: create your
+Cloudflare resources, set the GitHub secrets/variables, and push — CI renders the Wrangler
+config and deploys for you. Nothing below needs editing to deploy your own copy.
+
+Two trust boundaries (`<BASE_DOMAIN>` and `<ADMIN_SUBDOMAIN>` are the repo variables you set
+per [`DEPLOYMENT.md`](./DEPLOYMENT.md); defaults shown):
 
 | | Public | Admin |
 |---|---|---|
-| Host | `domk.pro/*` | `links.domk.pro/*` |
+| Host | `<BASE_DOMAIN>/*` | `links.<BASE_DOMAIN>/*` |
 | Auth | anonymous | Cloudflare Access (humans + service tokens) |
 | Shape | high-QPS, latency-critical | low-QPS, correctness-first |
 | Bundle | 2.6 KB gzipped, zero framework | Hono + drizzle |
@@ -17,14 +23,16 @@ Two trust boundaries:
 
 ```
 apps/
-  redirect-worker/    public hot path — domk.pro/*
-  admin-api/          authenticated CRUD — links.domk.pro/api/*
-  admin-frontend/     Vue 3 SPA on Pages — links.domk.pro
-  interactive-link/   unauthenticated interstitial pages — domk.pro/_i_/*
+  redirect-worker/    public hot path — <BASE_DOMAIN>/*
+  admin-api/          authenticated CRUD — links.<BASE_DOMAIN>/api/*
+  admin-frontend/     Vue 3 SPA, Workers static assets — links.<BASE_DOMAIN>
+  interactive-link/   unauthenticated interstitial pages — <BASE_DOMAIN>/_i_/*
 packages/
   shared-types/      Link, ClickEvent, JWT claim shapes
   db-schema/         drizzle schema + D1 migrations
   access-verify/     shared JOSE/JWKS verification
+scripts/
+  render-wrangler.mjs  builds each app's wrangler.jsonc from its .example + env — see DEPLOYMENT.md
 ```
 
 `access-verify` is a package rather than two copies because signature and audience
@@ -34,7 +42,7 @@ once.
 ## How a redirect resolves
 
 ```
-GET domk.pro/:slug
+GET <BASE_DOMAIN>/:slug
   └─ KV.get(slug) ── hit ──▶ 302  (+ Analytics Engine write via waitUntil)
        │
        └─ miss ──▶ D1 SELECT ── found ──▶ 302 + KV.put self-heal
@@ -87,12 +95,12 @@ not). A token Access accepts but that isn't registered here is rejected, so addi
 token to the Access app doesn't silently grant it write access to every link.
 
 ```
-POST https://links.domk.pro/api/links
+POST https://links.<BASE_DOMAIN>/api/links
 CF-Access-Client-Id: <client-id>.access
 CF-Access-Client-Secret: <client-secret>
 Content-Type: application/json
 
-{"slug": "gh", "destination": "https://github.com/domkirby"}
+{"slug": "gh", "destination": "https://github.com/your-org"}
 ```
 
 Revocation has two independent levers, and retiring a token for good means pulling
@@ -101,7 +109,7 @@ both: delete it in Access (dies at the edge, never reaches the Worker), or set
 
 ## API
 
-All routes are under `links.domk.pro/api` and require an Access assertion, except
+All routes are under `links.<BASE_DOMAIN>/api` and require an Access assertion, except
 `GET /api/health`.
 
 | Method | Route | Notes |
@@ -128,15 +136,15 @@ lockouts, nothing "ultra secure." A link marked `passwordProtected` resolves to 
 unlock page instead of its destination:
 
 ```
-GET domk.pro/{slug}
-  └─ resolves (KV or D1) to https://domk.pro/_i_/pw/{slug} instead of the real
-     destination — the redirect worker has zero awareness that this is a
+GET <BASE_DOMAIN>/{slug}
+  └─ resolves (KV or D1) to https://<BASE_DOMAIN>/_i_/pw/{slug} instead of the
+     real destination — the redirect worker has zero awareness that this is a
      "password" concept, it just resolves a different destination string.
 
-GET domk.pro/_i_/pw/{slug}          (served by apps/interactive-link)
+GET <BASE_DOMAIN>/_i_/pw/{slug}          (served by apps/interactive-link)
   └─ themed unlock page, prompts for a password
 
-POST domk.pro/_i_/pw/{slug}/verify
+POST <BASE_DOMAIN>/_i_/pw/{slug}/verify
   └─ correct password → {"destination": "<real url>"}, page JS redirects there
   └─ wrong password → 401, real destination never revealed
 ```
@@ -155,78 +163,25 @@ stores `{salt}::{hmac}`. Verifying re-does that HMAC and compares.
 Unlock-page appearance (background color, optional logo) comes from a `themes` row,
 managed at `/api/themes` (owner only) and assigned to a link via `themeId`.
 
-## First-time setup
+## Deploying your own copy
 
-```sh
-pnpm install
-
-# Create the resources, then paste the ids into both wrangler.toml files.
-pnpm exec wrangler d1 create domk-links
-pnpm exec wrangler kv namespace create LINKS
-
-pnpm db:migrate:remote
-```
-
-Then in `apps/admin-api/wrangler.toml` set `ACCESS_TEAM_DOMAIN`, `ACCESS_AUD` (the
-AUD tag of the `links.domk.pro` Access application) and `CF_ACCOUNT_ID`, and:
-
-```sh
-cd apps/admin-api
-pnpm exec wrangler secret put CF_ANALYTICS_API_TOKEN   # needs Account Analytics:Read
-```
-
-Optionally set `DEFAULT_REDIRECT_URL` in `apps/redirect-worker/wrangler.toml`; leave
-it empty for plain 404s on unknown slugs.
-
-Bootstrap the first admin by hand — there is no self-service signup, and the API
-authorizes against a table that starts empty:
-
-```sh
-pnpm exec wrangler d1 execute domk-links --remote --config apps/admin-api/wrangler.toml \
-  --command "INSERT INTO admins (email, role, created_at) VALUES ('you@example.com', 'owner', unixepoch() * 1000)"
-```
-
-Deploy:
-
-```sh
-pnpm --filter @domk/interactive-link run deploy
-pnpm --filter @domk/redirect-worker run deploy
-pnpm --filter @domk/admin-api run deploy
-pnpm --filter @domk/admin-frontend run deploy
-```
-
-Gate the Pages project with Access too. There's nothing sensitive in the bundle, but
-it keeps the trust boundary in one place: everything on `links.domk.pro` is behind
-Access.
+Full walkthrough — creating Cloudflare resources, setting up Access, and configuring the
+GitHub secrets/variables that drive CI — is in [`DEPLOYMENT.md`](./DEPLOYMENT.md). Short
+version: fork, set the secrets/variables it lists, push to `main`.
 
 ## CI/CD
 
-`.github/workflows/deploy.yml` runs the same steps on every push to `main`: apply D1
-migrations, then deploy all three Workers, then build and deploy the Pages project.
-It authenticates with two repo secrets:
+`.github/workflows/deploy.yml` runs on every push to `main`: render each app's
+`wrangler.jsonc` from its committed `wrangler.jsonc.example` plus GitHub repo
+secrets/variables (see [`DEPLOYMENT.md`](./DEPLOYMENT.md) for the full table), apply D1
+migrations, deploy all three Workers, push the Analytics Engine token as a Worker secret,
+then build and deploy the admin SPA (also a Worker, using static assets). No
+deployment-specific value is ever committed — everything deployment-shaped lives in GitHub's
+**Settings → Secrets and variables → Actions**.
 
-| Secret | Value |
-|---|---|
-| `CLOUDFLARE_API_TOKEN` | A **custom** API token (not the global API key) |
-| `CLOUDFLARE_ACCOUNT_ID` | The account ID shown in the Cloudflare dashboard sidebar, or `wrangler whoami` |
-
-The token needs enough scope to run migrations and deploy both product types the
-workflow touches — D1, Workers, and Pages — plus the zone permission Workers needs to
-attach the custom routes declared in `wrangler.toml`. Create it under **My Profile →
-API Tokens → Create Token → Custom token** with:
-
-| Scope | Permission |
-|---|---|
-| Account | `D1:Edit` |
-| Account | `Workers Scripts:Edit` |
-| Account | `Cloudflare Pages:Edit` |
-| Zone (`domk.pro`) | `Workers Routes:Edit` |
-
-The Cloudflare-managed "Edit Cloudflare Workers" template covers the Workers and
-routes permissions but not `D1:Edit` or `Cloudflare Pages:Edit` — those two have to be
-added by hand, or use a fully custom token as above. This token is distinct from the
-`CF_ANALYTICS_API_TOKEN` runtime secret set on `admin-api` (`Account Analytics:Read`,
-used by the deployed Worker to query click stats, not by CI to deploy).
+`.github/workflows/ci.yml`'s `deploy-config` job runs on every PR to `main` and fails it if a
+required secret or variable is missing, so a misconfigured fork finds out before merge instead
+of via a broken deploy.
 
 ## Development
 

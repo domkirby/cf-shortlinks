@@ -50,7 +50,7 @@ const isOwner = () => actor.value?.type === 'service' || actor.value?.role === '
 <template>
   <div class="layout">
     <header class="topbar">
-      <span class="brand">domk.pro</span>
+      <span class="brand">CF Shortlinks</span>
       <nav class="tabs">
         <RouterLink to="/links">Links</RouterLink>
         <RouterLink to="/stats">Stats</RouterLink>

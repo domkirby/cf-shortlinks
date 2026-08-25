@@ -58,7 +58,7 @@ export function createHarness(options: HarnessOptions = {}): TestHarness {
       }),
     },
     ANALYTICS: { writeDataPoint },
-    SHORT_DOMAIN: 'domk.pro',
+    SHORT_DOMAIN: 'example.com',
     ...options.vars,
   } as unknown as Env;
 
@@ -83,7 +83,7 @@ export function createHarness(options: HarnessOptions = {}): TestHarness {
 }
 
 export function get(path: string, headers: Record<string, string> = {}): Request {
-  return new Request(`https://domk.pro${path}`, { headers }) as unknown as Request;
+  return new Request(`https://example.com${path}`, { headers }) as unknown as Request;
 }
 
 /** The blobs array as written to Analytics Engine, named. */

@@ -1,0 +1,33 @@
+{
+  // Live *.workers.dev subdomain if unchanged: shortlinks-interactive-link.<account>.workers.dev.
+  // Override with CF_WORKER_NAME_INTERACTIVE_LINK if that name is taken.
+  "name": "shortlinks-interactive-link",
+  "main": "src/index.ts",
+  "compatibility_date": "2025-01-15",
+  "workers_dev": false,
+
+  "observability": {
+    "enabled": true
+  },
+
+  // Owns the _i_ namespace (reserved in admin-api's RESERVED_SLUGS) for
+  // interactive features that need a page in between the short link and the
+  // destination — password protection today, maybe more later.
+  //
+  // pattern/zone_name are computed by scripts/render-wrangler.mjs from the
+  // BASE_DOMAIN repo variable — do not edit by hand, it gets overwritten.
+  "routes": [
+    { "pattern": "example.com/_i_/*", "zone_name": "example.com" }
+  ],
+
+  // Never calls admin-api (it can't get past Access anyway) — reads links and
+  // themes directly. No KV binding: this worker isn't part of the redirect
+  // hot path, so there's nothing here worth caching.
+  //
+  // Same database as the other three apps. Repo variables: D1_DATABASE_NAME
+  // (optional), D1_DATABASE_ID (required). No migrations_dir — only admin-api
+  // owns migrations.
+  "d1_databases": [
+    { "binding": "DB", "database_name": "shortlinks-db", "database_id": "REPLACE_ME" }
+  ]
+}

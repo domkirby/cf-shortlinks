@@ -1,13 +1,21 @@
 name: Deploy
 
+# Deploys all four apps to Cloudflare on push to main.
+#
+# Each app's wrangler.jsonc is rendered at deploy time from its committed
+# wrangler.jsonc.example plus the GitHub secrets/variables listed below, so no
+# deployment-specific values are ever committed. See DEPLOYMENT.md for the
+# full list and how to set them.
+#
+# Migrations run before any Worker deploy: a Worker that expects a column the
+# database doesn't have yet fails on live traffic, whereas a database with a
+# column nothing reads yet is harmless.
+
 on:
   workflow_dispatch:
   push:
     branches: [main]
 
-# Migrations run before any Worker deploy: a Worker that expects a column the
-# database doesn't have yet fails on live traffic, whereas a database with a
-# column nothing reads yet is harmless.
 concurrency:
   group: deploy
   cancel-in-progress: false
@@ -19,6 +27,22 @@ jobs:
     env:
       CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
       CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+      BASE_DOMAIN: ${{ vars.BASE_DOMAIN }}
+      ADMIN_SUBDOMAIN: ${{ vars.ADMIN_SUBDOMAIN }}
+      DEFAULT_REDIRECT_URL: ${{ vars.DEFAULT_REDIRECT_URL }}
+      ACCESS_TEAM_DOMAIN: ${{ vars.ACCESS_TEAM_DOMAIN }}
+      ACCESS_AUD: ${{ vars.ACCESS_AUD }}
+      CF_ACCOUNT_ID: ${{ vars.CF_ACCOUNT_ID }}
+      ANALYTICS_DATASET: ${{ vars.ANALYTICS_DATASET }}
+      D1_DATABASE_NAME: ${{ vars.D1_DATABASE_NAME }}
+      D1_DATABASE_ID: ${{ vars.D1_DATABASE_ID }}
+      KV_NAMESPACE_ID: ${{ vars.KV_NAMESPACE_ID }}
+      KV_TTL_SECONDS: ${{ vars.KV_TTL_SECONDS }}
+      REDIRECT_STATUS: ${{ vars.REDIRECT_STATUS }}
+      CF_WORKER_NAME_REDIRECT: ${{ vars.CF_WORKER_NAME_REDIRECT }}
+      CF_WORKER_NAME_ADMIN_API: ${{ vars.CF_WORKER_NAME_ADMIN_API }}
+      CF_WORKER_NAME_INTERACTIVE_LINK: ${{ vars.CF_WORKER_NAME_INTERACTIVE_LINK }}
+      CF_WORKER_NAME_ADMIN_FRONTEND: ${{ vars.CF_WORKER_NAME_ADMIN_FRONTEND }}
     steps:
       - uses: actions/checkout@v4
 
@@ -30,6 +54,17 @@ jobs:
           cache: pnpm
 
       - run: pnpm install --frozen-lockfile
+
+      # Writes each app's apps/<app>/wrangler.jsonc (gitignored) from its
+      # wrangler.jsonc.example. --require-all fails the run if a required
+      # secret/variable is unset, rather than deploying against the
+      # template's placeholder ids.
+      - name: Render wrangler.jsonc for all four apps
+        run: |
+          node scripts/render-wrangler.mjs redirect-worker --require-all
+          node scripts/render-wrangler.mjs interactive-link --require-all
+          node scripts/render-wrangler.mjs admin-api --require-all
+          node scripts/render-wrangler.mjs admin-frontend --require-all
 
       - name: Apply D1 migrations
         run: pnpm db:migrate:remote
@@ -43,8 +78,21 @@ jobs:
       - name: Deploy admin API
         run: pnpm --filter @domk/admin-api run deploy
 
+      # Pushed as a Worker secret, never written into wrangler.jsonc.
+      - name: Set admin API analytics secret
+        working-directory: apps/admin-api
+        run: echo "$CF_ANALYTICS_API_TOKEN" | pnpm exec wrangler secret put CF_ANALYTICS_API_TOKEN
+        env:
+          CF_ANALYTICS_API_TOKEN: ${{ secrets.CF_ANALYTICS_API_TOKEN }}
+
+      # Vite bakes VITE_* into the bundle at build time — they are read here,
+      # not at request time.
       - name: Build admin SPA
-        run: pnpm --filter @domk/admin-frontend build
+        working-directory: apps/admin-frontend
+        run: pnpm run build
+        env:
+          VITE_SHORT_DOMAIN: ${{ vars.BASE_DOMAIN }}
+          VITE_ADMIN_DOMAIN: ${{ vars.ADMIN_SUBDOMAIN || 'links' }}.${{ vars.BASE_DOMAIN }}
 
       - name: Deploy admin SPA
         run: pnpm --filter @domk/admin-frontend run deploy

@@ -19,7 +19,7 @@ describe('POST /api/links', () => {
 
     expect(link).toMatchObject({ slug: 'gh', destination: DEST, active: true, tags: ['work'] });
     expect(link.ownerEmail).toBe('dev@example.com');
-    expect(shortUrl).toBe('https://domk.pro/gh');
+    expect(shortUrl).toBe('https://example.com/gh');
     expect(await kvRecord('gh')).toEqual({ d: DEST });
   });
 
@@ -180,7 +180,7 @@ describe('password protection', () => {
     });
 
     expect(link.passwordProtected).toBe(true);
-    expect(await kvRecord('secret')).toEqual({ d: 'https://domk.pro/_i_/pw/secret' });
+    expect(await kvRecord('secret')).toEqual({ d: 'https://example.com/_i_/pw/secret' });
   });
 
   it('never returns the stored verifier', async () => {
@@ -199,7 +199,7 @@ describe('password protection', () => {
     const { link } = await createLink({ destination: DEST, passwordVerifier: 'aabbcc:ddeeff' });
 
     expect(link.passwordProtected).toBe(true);
-    expect(await kvRecord(link.slug)).toEqual({ d: `https://domk.pro/_i_/pw/${link.slug}` });
+    expect(await kvRecord(link.slug)).toEqual({ d: `https://example.com/_i_/pw/${link.slug}` });
   });
 
   it('an unprotected link caches its real destination as usual', async () => {
@@ -223,7 +223,7 @@ describe('password protection', () => {
 
     await json(`/api/links/${link.id}`, 'PATCH', { passwordVerifier: 'aabbcc:ddeeff' });
 
-    expect(await kvRecord('gh')).toEqual({ d: 'https://domk.pro/_i_/pw/gh' });
+    expect(await kvRecord('gh')).toEqual({ d: 'https://example.com/_i_/pw/gh' });
   });
 
   it('clears protection via PATCH with passwordVerifier: null', async () => {
@@ -242,7 +242,7 @@ describe('password protection', () => {
 
     const res = await call(`/api/links/${link.id}`);
     expect(((await res.json()) as LinkResponse).link.passwordProtected).toBe(true);
-    expect(await kvRecord('gh')).toEqual({ d: 'https://domk.pro/_i_/pw/gh' });
+    expect(await kvRecord('gh')).toEqual({ d: 'https://example.com/_i_/pw/gh' });
   });
 
   it('re-hashes against the new slug when protection and rename happen together', async () => {
@@ -251,7 +251,7 @@ describe('password protection', () => {
     await json(`/api/links/${link.id}`, 'PATCH', { slug: 'new', passwordVerifier: 'aabbcc:ddeeff' });
 
     expect(await kvRecord('old')).toBeNull();
-    expect(await kvRecord('new')).toEqual({ d: 'https://domk.pro/_i_/pw/new' });
+    expect(await kvRecord('new')).toEqual({ d: 'https://example.com/_i_/pw/new' });
   });
 });
 
