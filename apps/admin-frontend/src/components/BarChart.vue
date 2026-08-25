@@ -36,7 +36,7 @@ function label(bucket: string): string {
       :width="barWidth * 0.8"
       :height="Math.max((point.clicks / max) * height, 1)"
       fill="var(--accent)"
-      rx="0.5"
+      rx="1"
     >
       <title>{{ label(point.bucket) }} — {{ point.clicks }} clicks</title>
     </rect>

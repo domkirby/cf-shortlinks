@@ -72,7 +72,7 @@ const formatDate = (epochMs: number) => new Date(epochMs).toLocaleDateString();
         <label for="name">Name (must match Access exactly)</label>
         <input id="name" v-model="form.name" required placeholder="ci-deploy" />
       </div>
-      <div class="field" style="flex: 2">
+      <div class="field field--wide">
         <label for="description">What is it for?</label>
         <input id="description" v-model="form.description" placeholder="n8n workflow, release job…" />
       </div>
@@ -82,7 +82,7 @@ const formatDate = (epochMs: number) => new Date(epochMs).toLocaleDateString();
 
   <div class="card">
     <p v-if="!tokens.length" class="empty">No service tokens registered.</p>
-    <table v-else>
+    <table v-else class="responsive">
       <thead>
         <tr>
           <th>Name</th>
@@ -93,19 +93,19 @@ const formatDate = (epochMs: number) => new Date(epochMs).toLocaleDateString();
       </thead>
       <tbody>
         <tr v-for="token in tokens" :key="token.name">
-          <td class="mono">{{ token.name }}</td>
-          <td>
+          <td class="mono" data-label="Name">{{ token.name }}</td>
+          <td data-label="State">
             <span class="pill" :class="token.active ? 'on' : 'off'">
               {{ token.active ? 'active' : 'revoked' }}
             </span>
           </td>
-          <td class="muted">{{ formatDate(token.createdAt) }}</td>
-          <td>
+          <td class="muted" data-label="Registered">{{ formatDate(token.createdAt) }}</td>
+          <td class="cell-actions">
             <div class="actions">
               <button class="link" @click="run(() => api.setTokenActive(token.name, !token.active))">
                 {{ token.active ? 'Revoke' : 'Re-enable' }}
               </button>
-              <button class="link" style="color: var(--danger)" @click="forget(token)">Forget</button>
+              <button class="link danger" @click="forget(token)">Forget</button>
             </div>
           </td>
         </tr>
