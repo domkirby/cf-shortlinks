@@ -55,7 +55,7 @@ const remove = (admin: AdminRecord) =>
   <form class="card" @submit.prevent="add">
     <h2>Add an admin</h2>
     <div class="row">
-      <div class="field" style="flex: 3">
+      <div class="field field--wide">
         <label for="email">Email (as your IdP reports it)</label>
         <input id="email" v-model="form.email" type="email" required placeholder="you@example.com" />
       </div>
@@ -72,7 +72,7 @@ const remove = (admin: AdminRecord) =>
 
   <div class="card">
     <p v-if="!admins.length" class="empty">No admins yet.</p>
-    <table v-else>
+    <table v-else class="responsive">
       <thead>
         <tr>
           <th>Email</th>
@@ -82,10 +82,10 @@ const remove = (admin: AdminRecord) =>
       </thead>
       <tbody>
         <tr v-for="admin in admins" :key="admin.email">
-          <td class="mono">{{ admin.email }}</td>
-          <td><span class="pill">{{ admin.role }}</span></td>
-          <td>
-            <button class="link" style="color: var(--danger)" @click="remove(admin)">Remove</button>
+          <td class="mono" data-label="Email">{{ admin.email }}</td>
+          <td data-label="Role"><span class="pill">{{ admin.role }}</span></td>
+          <td class="cell-actions">
+            <button class="link danger" @click="remove(admin)">Remove</button>
           </td>
         </tr>
       </tbody>

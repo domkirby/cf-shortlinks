@@ -83,11 +83,11 @@ const remove = (theme: Theme) =>
         <label for="name">Name</label>
         <input id="name" v-model="form.name" required placeholder="Default" />
       </div>
-      <div class="field" style="max-width: 160px">
+      <div class="field field--narrow">
         <label for="bg">Background color</label>
-        <input id="bg" v-model="form.backgroundColor" type="color" style="height: 38px" />
+        <input id="bg" v-model="form.backgroundColor" type="color" />
       </div>
-      <div class="field" style="flex: 2">
+      <div class="field field--wide">
         <label for="logo">Logo URL (optional)</label>
         <input id="logo" v-model="form.logoUrl" placeholder="https://…" />
       </div>
@@ -100,7 +100,7 @@ const remove = (theme: Theme) =>
 
   <div class="card">
     <p v-if="!themes.length" class="empty">No themes yet.</p>
-    <table v-else>
+    <table v-else class="responsive">
       <thead>
         <tr>
           <th>Name</th>
@@ -111,8 +111,8 @@ const remove = (theme: Theme) =>
       </thead>
       <tbody>
         <tr v-for="theme in themes" :key="theme.id">
-          <td>{{ theme.name }}</td>
-          <td>
+          <td data-label="Name">{{ theme.name }}</td>
+          <td data-label="Background">
             <span
               class="mono"
               :style="{
@@ -127,11 +127,11 @@ const remove = (theme: Theme) =>
             ></span>
             {{ theme.backgroundColor }}
           </td>
-          <td class="muted truncate">{{ theme.logoUrl || '—' }}</td>
-          <td>
+          <td class="muted truncate cell-full" data-label="Logo">{{ theme.logoUrl || '—' }}</td>
+          <td class="cell-actions">
             <div class="actions">
               <button class="link" @click="startEdit(theme)">Edit</button>
-              <button class="link" style="color: var(--danger)" @click="remove(theme)">Delete</button>
+              <button class="link danger" @click="remove(theme)">Delete</button>
             </div>
           </td>
         </tr>

@@ -31,8 +31,8 @@ watch(days, load);
   <div v-if="error" class="banner error">{{ error }}</div>
 
   <div class="card">
-    <div class="row" style="align-items: flex-end">
-      <div class="field" style="max-width: 200px; margin: 0">
+    <div class="stat-panel">
+      <div class="field">
         <label for="days">Window</label>
         <select id="days" v-model.number="days">
           <option :value="1">Last 24 hours</option>
@@ -41,7 +41,7 @@ watch(days, load);
           <option :value="90">Last 90 days</option>
         </select>
       </div>
-      <div v-if="stats" style="text-align: right">
+      <div v-if="stats" class="stat-callout">
         <div class="muted">Total clicks</div>
         <div class="stat">{{ stats.totalClicks.toLocaleString() }}</div>
       </div>

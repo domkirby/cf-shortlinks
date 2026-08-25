@@ -215,7 +215,7 @@ const formatDate = (epochMs: number) => new Date(epochMs).toLocaleDateString();
         <label for="slug">Slug</label>
         <input id="slug" v-model="form.slug" placeholder="leave blank to generate" />
       </div>
-      <div class="field" style="flex: 3">
+      <div class="field field--wide">
         <label for="destination">Destination</label>
         <input id="destination" v-model="form.destination" required placeholder="https://…" />
       </div>
@@ -229,9 +229,9 @@ const formatDate = (epochMs: number) => new Date(epochMs).toLocaleDateString();
         <label for="tags">Tags (comma separated)</label>
         <input id="tags" v-model="form.tags" placeholder="work, social" />
       </div>
-      <div class="field" style="max-width: 120px">
+      <div class="field field--narrow">
         <label for="active">Active</label>
-        <input id="active" v-model="form.active" type="checkbox" style="width: auto" />
+        <input id="active" v-model="form.active" type="checkbox" />
       </div>
     </div>
     <div class="row">
@@ -241,7 +241,6 @@ const formatDate = (epochMs: number) => new Date(epochMs).toLocaleDateString();
           id="password-enabled"
           v-model="form.passwordEnabled"
           type="checkbox"
-          style="width: auto"
         />
       </div>
       <div class="field" v-if="form.passwordEnabled">
@@ -275,7 +274,7 @@ const formatDate = (epochMs: number) => new Date(epochMs).toLocaleDateString();
 
     <p v-if="loading" class="empty">Loading…</p>
     <p v-else-if="!links.length" class="empty">No links yet.</p>
-    <table v-else>
+    <table v-else class="responsive">
       <thead>
         <tr>
           <th>Slug</th>
@@ -286,8 +285,8 @@ const formatDate = (epochMs: number) => new Date(epochMs).toLocaleDateString();
       </thead>
       <tbody>
         <tr v-for="link in links" :key="link.id">
-          <td class="mono">/{{ link.slug }}</td>
-          <td>
+          <td class="mono" data-label="Slug">/{{ link.slug }}</td>
+          <td data-label="Destination" class="cell-full">
             <a class="truncate mono" :href="link.destination" target="_blank" rel="noopener noreferrer">
               {{ link.destination }}
             </a>
@@ -295,13 +294,13 @@ const formatDate = (epochMs: number) => new Date(epochMs).toLocaleDateString();
               {{ secondaryLine(link) }}
             </div>
           </td>
-          <td>
+          <td data-label="State">
             <span class="pill" :class="link.active ? 'on' : 'off'">
               {{ link.active ? 'active' : 'off' }}
             </span>
-            <span v-if="link.passwordProtected" class="pill on" style="margin-left: 4px">protected</span>
+            <span v-if="link.passwordProtected" class="pill accent" style="margin-left: 4px">protected</span>
           </td>
-          <td>
+          <td class="cell-menu">
             <details class="menu">
               <summary>⋮</summary>
               <div class="menu-items">
