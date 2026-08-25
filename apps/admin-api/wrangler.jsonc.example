@@ -1,0 +1,63 @@
+{
+  // Live *.workers.dev subdomain if unchanged: shortlinks-admin-api.<account>.workers.dev.
+  // Override with CF_WORKER_NAME_ADMIN_API if that name is taken.
+  "name": "shortlinks-admin-api",
+  "main": "src/index.ts",
+  "compatibility_date": "2025-01-15",
+  "compatibility_flags": ["nodejs_compat"],
+  "workers_dev": false,
+
+  // Authenticated, low-QPS. Cloudflare Access sits in front of this hostname
+  // with two policies: one for human identity, one for service tokens.
+  //
+  // pattern/zone_name are computed by scripts/render-wrangler.mjs from the
+  // ADMIN_SUBDOMAIN (repo variable, default "links") and BASE_DOMAIN repo
+  // variables — do not edit by hand, it gets overwritten. The more specific
+  // /api/* route here always wins over admin-frontend's /* route on the same
+  // hostname — Workers route matching is by specificity, not deploy order.
+  "routes": [
+    { "pattern": "links.example.com/api/*", "zone_name": "example.com" }
+  ],
+
+  "observability": {
+    "enabled": true
+  },
+
+  "vars": {
+    // Zero Trust team domain — "acme", "acme.cloudflareaccess.com" and the
+    // full https:// URL are all accepted. Repo variable: ACCESS_TEAM_DOMAIN (required)
+    "ACCESS_TEAM_DOMAIN": "",
+    // AUD tag of your admin Access application. Repo variable: ACCESS_AUD (required)
+    "ACCESS_AUD": "",
+    // Mirrors BASE_DOMAIN — computed by render-wrangler.mjs, do not edit.
+    "SHORT_DOMAIN": "example.com",
+    // Repo variable: CF_ACCOUNT_ID (required) — your Cloudflare account id,
+    // used at runtime to call the Analytics Engine SQL API.
+    "CF_ACCOUNT_ID": "",
+    // Repo variable: ANALYTICS_DATASET (optional, default shown)
+    "ANALYTICS_DATASET": "shortlinks_clicks",
+    // Repo variable: KV_TTL_SECONDS (optional, default shown)
+    "KV_TTL_SECONDS": "86400"
+  },
+
+  // Secrets (never in this file):
+  //   wrangler secret put CF_ANALYTICS_API_TOKEN   # needs Account Analytics:Read
+  // In CI this is pushed automatically from the CF_ANALYTICS_API_TOKEN repo secret.
+
+  // Repo variables: D1_DATABASE_NAME (optional), D1_DATABASE_ID (required) —
+  // create with: wrangler d1 create shortlinks-db
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "shortlinks-db",
+      "database_id": "REPLACE_ME",
+      "migrations_dir": "../../packages/db-schema/migrations"
+    }
+  ],
+
+  // Same namespace the redirect worker reads. Every mutation writes through here.
+  // Repo variable: KV_NAMESPACE_ID (required)
+  "kv_namespaces": [
+    { "binding": "LINKS", "id": "REPLACE_ME" }
+  ]
+}

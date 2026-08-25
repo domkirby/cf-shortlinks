@@ -6,6 +6,7 @@ import { api, ApiRequestError } from '../api';
 const tokens = ref<ServiceToken[]>([]);
 const error = ref<string | null>(null);
 const form = reactive({ name: '', description: '' });
+const adminDomain = import.meta.env.VITE_ADMIN_DOMAIN;
 
 async function load(): Promise<void> {
   error.value = null;
@@ -52,7 +53,7 @@ const formatDate = (epochMs: number) => new Date(epochMs).toLocaleDateString();
     <h2>How these work</h2>
     <p class="muted" style="margin: 0">
       The credential itself lives in Cloudflare Access — create the service token in Zero
-      Trust, scoped to the <span class="mono">links.domk.pro</span> application, then register
+      Trust, scoped to the <span class="mono">{{ adminDomain }}</span> application, then register
       its <strong>name</strong> here so this API will honour it. Registering does not mint a
       secret, and nothing on this page can show you one.
     </p>

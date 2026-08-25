@@ -1,0 +1,54 @@
+{
+  // Live *.workers.dev subdomain if you leave this unchanged:
+  // shortlinks-redirect.<your-account>.workers.dev. Override with the
+  // CF_WORKER_NAME_REDIRECT repo variable if that name is already taken.
+  "name": "shortlinks-redirect",
+  "main": "src/index.ts",
+  "compatibility_date": "2025-01-15",
+  "workers_dev": false,
+
+  "observability": {
+    "enabled": true
+  },
+
+  // Public hot path. Deployed separately from admin-api so admin changes can
+  // never grow this bundle or take the redirect path down with them.
+  //
+  // pattern/zone_name are computed by scripts/render-wrangler.mjs from the
+  // BASE_DOMAIN repo variable — do not edit by hand, it gets overwritten.
+  "routes": [
+    { "pattern": "example.com/*", "zone_name": "example.com" }
+  ],
+
+  "vars": {
+    // Unset (or empty) keeps the plain-404 behaviour for unknown slugs.
+    // Repo variable: DEFAULT_REDIRECT_URL (required)
+    "DEFAULT_REDIRECT_URL": "",
+    // Repo variable: KV_TTL_SECONDS (optional, default shown)
+    "KV_TTL_SECONDS": "86400",
+    // Repo variable: REDIRECT_STATUS (optional, default shown)
+    "REDIRECT_STATUS": "302",
+    // Mirrors BASE_DOMAIN — computed by render-wrangler.mjs, do not edit.
+    "SHORT_DOMAIN": "example.com"
+  },
+
+  // Cache of the links table. Same namespace the admin API writes through to.
+  // Repo variable: KV_NAMESPACE_ID (required) — create with:
+  //   wrangler kv namespace create LINKS
+  "kv_namespaces": [
+    { "binding": "LINKS", "id": "REPLACE_ME" }
+  ],
+
+  // Source of truth. Read only on a KV miss.
+  // Repo variables: D1_DATABASE_NAME (optional), D1_DATABASE_ID (required) —
+  // create with:
+  //   wrangler d1 create shortlinks-db
+  "d1_databases": [
+    { "binding": "DB", "database_name": "shortlinks-db", "database_id": "REPLACE_ME" }
+  ],
+
+  // Repo variable: ANALYTICS_DATASET (optional, default shown)
+  "analytics_engine_datasets": [
+    { "binding": "ANALYTICS", "dataset": "shortlinks_clicks" }
+  ]
+}

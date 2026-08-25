@@ -2,7 +2,7 @@ import { env, createExecutionContext, waitOnExecutionContext } from 'cloudflare:
 import app from '../src/index.js';
 import { hmacVerifier } from '../src/lib/hmac.js';
 
-export const BASE = 'https://domk.pro';
+export const BASE = 'https://example.com';
 
 export async function call(path: string, init: RequestInit = {}): Promise<Response> {
   const ctx = createExecutionContext();

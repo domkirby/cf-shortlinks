@@ -3,7 +3,7 @@ import type { AppEnv } from './env.js';
 import pw from './routes/pw.js';
 
 /**
- * Owns the `_i_` namespace (domk.pro/_i_/*) — reserved for interactive
+ * Owns the `_i_` namespace (example.com/_i_/*) — reserved for interactive
  * features that need a page in between the short link and its destination.
  * Password protection is the first one; see routes/pw.ts.
  *

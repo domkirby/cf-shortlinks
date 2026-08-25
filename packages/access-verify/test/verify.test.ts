@@ -196,21 +196,21 @@ describe('identityFromPayload', () => {
 
 describe('extractAccessJwt', () => {
   it('prefers the Access header', () => {
-    const req = new Request('https://links.domk.pro/api/links', {
+    const req = new Request('https://links.example.com/api/links', {
       headers: { 'Cf-Access-Jwt-Assertion': 'header-token', Cookie: 'CF_Authorization=cookie-token' },
     });
     expect(extractAccessJwt(req)).toBe('header-token');
   });
 
   it('falls back to the CF_Authorization cookie', () => {
-    const req = new Request('https://links.domk.pro/api/links', {
+    const req = new Request('https://links.example.com/api/links', {
       headers: { Cookie: 'other=1; CF_Authorization=cookie-token; trailing=2' },
     });
     expect(extractAccessJwt(req)).toBe('cookie-token');
   });
 
   it('returns null when neither is present', () => {
-    const req = new Request('https://links.domk.pro/api/links', {
+    const req = new Request('https://links.example.com/api/links', {
       headers: { Cookie: 'other=1' },
     });
     expect(extractAccessJwt(req)).toBeNull();

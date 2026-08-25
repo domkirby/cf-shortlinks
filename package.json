@@ -2,7 +2,7 @@
   "name": "domk-pro",
   "version": "0.1.0",
   "private": true,
-  "description": "Cloudflare-native link shortener for domk.pro",
+  "description": "Cloudflare-native link shortener you deploy to your own domain",
   "license": "MIT",
   "packageManager": "pnpm@10.33.0",
   "engines": {

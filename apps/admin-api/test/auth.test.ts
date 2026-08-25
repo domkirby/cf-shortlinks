@@ -11,7 +11,7 @@ beforeEach(resetTables);
 /** A request to the real hostname, where the dev bypass does not apply. */
 async function callProd(path: string, init: RequestInit = {}): Promise<Response> {
   const ctx = createExecutionContext();
-  const res = await app.fetch(new Request(`https://links.domk.pro${path}`, init), env, ctx);
+  const res = await app.fetch(new Request(`https://links.example.com${path}`, init), env, ctx);
   await waitOnExecutionContext(ctx);
   return res;
 }

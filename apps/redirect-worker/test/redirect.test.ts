@@ -59,11 +59,11 @@ describe('redirect worker', () => {
     await h.settle();
 
     expect(res.status).toBe(302);
-    expect(res.headers.get('Location')).toBe('https://domk.pro/_i_/pw/secret');
+    expect(res.headers.get('Location')).toBe('https://example.com/_i_/pw/secret');
     // Self-heal caches the substituted URL too, never the real destination.
     expect(h.kvPut).toHaveBeenCalledOnce();
     expect(JSON.parse(h.kvPut.mock.calls[0]?.[1] as string)).toEqual({
-      d: 'https://domk.pro/_i_/pw/secret',
+      d: 'https://example.com/_i_/pw/secret',
     });
   });
 
@@ -128,32 +128,32 @@ describe('redirect worker', () => {
   });
 
   it('serves DEFAULT_REDIRECT_URL for an unknown slug when configured', async () => {
-    const h = createHarness({ vars: { DEFAULT_REDIRECT_URL: 'https://domk.pro/not-found' } });
+    const h = createHarness({ vars: { DEFAULT_REDIRECT_URL: 'https://example.com/not-found' } });
 
     const res = await worker.fetch(get('/nope'), h.env, h.ctx);
     await h.settle();
 
     expect(res.status).toBe(302);
-    expect(res.headers.get('Location')).toBe('https://domk.pro/not-found');
+    expect(res.headers.get('Location')).toBe('https://example.com/not-found');
     expect(readClick(h.writeDataPoint).outcome).toBe('fallback');
   });
 
   it('still serves the fallback when D1 is down', async () => {
     const h = createHarness({
       d1Throws: true,
-      vars: { DEFAULT_REDIRECT_URL: 'https://domk.pro/not-found' },
+      vars: { DEFAULT_REDIRECT_URL: 'https://example.com/not-found' },
     });
 
     const res = await worker.fetch(get('/anything'), h.env, h.ctx);
 
     expect(res.status).toBe(302);
-    expect(res.headers.get('Location')).toBe('https://domk.pro/not-found');
+    expect(res.headers.get('Location')).toBe('https://example.com/not-found');
   });
 
   it('honours a configured permanent redirect status for real links only', async () => {
     const h = createHarness({
       kv: { gh: JSON.stringify({ d: 'https://github.com' }) },
-      vars: { REDIRECT_STATUS: '308', DEFAULT_REDIRECT_URL: 'https://domk.pro/not-found' },
+      vars: { REDIRECT_STATUS: '308', DEFAULT_REDIRECT_URL: 'https://example.com/not-found' },
     });
 
     expect((await worker.fetch(get('/gh'), h.env, h.ctx)).status).toBe(308);
@@ -164,7 +164,7 @@ describe('redirect worker', () => {
 
   it('rejects non-GET methods', async () => {
     const h = createHarness();
-    const req = new Request('https://domk.pro/gh', { method: 'POST' }) as unknown as Request;
+    const req = new Request('https://example.com/gh', { method: 'POST' }) as unknown as Request;
 
     const res = await worker.fetch(req, h.env, h.ctx);
 
@@ -183,12 +183,12 @@ describe('redirect worker', () => {
   });
 
   it('handles the bare root without spending a KV read', async () => {
-    const h = createHarness({ vars: { DEFAULT_REDIRECT_URL: 'https://domk.pro/home' } });
+    const h = createHarness({ vars: { DEFAULT_REDIRECT_URL: 'https://example.com/home' } });
 
     const res = await worker.fetch(get('/'), h.env, h.ctx);
     await h.settle();
 
-    expect(res.headers.get('Location')).toBe('https://domk.pro/home');
+    expect(res.headers.get('Location')).toBe('https://example.com/home');
     expect(h.env.LINKS.get).not.toHaveBeenCalled();
   });
 

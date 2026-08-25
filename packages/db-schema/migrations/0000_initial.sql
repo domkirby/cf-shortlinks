@@ -1,4 +1,4 @@
--- Initial schema for domk.pro.
+-- Initial schema for CF Shortlinks.
 -- D1 is the source of truth; KV is a cache of the `links` table.
 
 CREATE TABLE IF NOT EXISTS links (

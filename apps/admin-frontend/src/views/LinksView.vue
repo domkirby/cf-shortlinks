@@ -198,7 +198,7 @@ async function copy(shortUrl: string): Promise<void> {
   notice.value = `Copied ${shortUrl}`;
 }
 
-const shortUrlFor = (link: Link) => `https://domk.pro/${link.slug}`;
+const shortUrlFor = (link: Link) => `https://${import.meta.env.VITE_SHORT_DOMAIN}/${link.slug}`;
 const formatDate = (epochMs: number) => new Date(epochMs).toLocaleDateString();
 </script>
 

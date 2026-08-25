@@ -1,0 +1,25 @@
+{
+  // Live *.workers.dev subdomain if unchanged: shortlinks-admin.<account>.workers.dev.
+  // Override with CF_WORKER_NAME_ADMIN_FRONTEND if that name is taken.
+  "name": "shortlinks-admin",
+  "compatibility_date": "2025-01-15",
+
+  // Access-gate this Worker route too (Zero Trust Access policy on
+  // <ADMIN_SUBDOMAIN>.<BASE_DOMAIN>/*). There's nothing sensitive in the
+  // static bundle, but it keeps the trust boundary in one place: everything
+  // on the admin hostname is behind Access.
+  //
+  // pattern/zone_name are computed by scripts/render-wrangler.mjs from the
+  // ADMIN_SUBDOMAIN (repo variable, default "links") and BASE_DOMAIN repo
+  // variables — do not edit by hand, it gets overwritten. admin-api's more
+  // specific /api/* route on the same hostname always wins over this one —
+  // Workers route matching is by specificity, not deploy order.
+  "routes": [
+    { "pattern": "links.example.com/*", "zone_name": "example.com" }
+  ],
+
+  "assets": {
+    "directory": "./dist",
+    "not_found_handling": "single-page-application"
+  }
+}

@@ -18,7 +18,7 @@ The admin API authorizes against the `admins` table, and there is no
 self-service signup — so the first row goes in by hand:
 
 ```sh
-wrangler d1 execute domk-links --remote --config ../../apps/admin-api/wrangler.toml \
+wrangler d1 execute DB --remote --config ../../apps/admin-api/wrangler.jsonc \
   --command "INSERT INTO admins (email, role, created_at) VALUES ('you@example.com', 'owner', unixepoch() * 1000)"
 ```
 
@@ -31,7 +31,7 @@ accept it at the edge), then mirror its **name** here so the Worker will honour
 it:
 
 ```sh
-wrangler d1 execute domk-links --remote --config ../../apps/admin-api/wrangler.toml \
+wrangler d1 execute DB --remote --config ../../apps/admin-api/wrangler.jsonc \
   --command "INSERT INTO service_tokens (name, active, created_at) VALUES ('ci-deploy', 1, unixepoch() * 1000)"
 ```
 

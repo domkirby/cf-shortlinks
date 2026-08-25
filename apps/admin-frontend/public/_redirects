@@ -1,5 +1,0 @@
-# SPA history routing: everything that isn't a real asset renders index.html.
-# /api/* is claimed by the admin-api Worker route on the same hostname, so it
-# must never be rewritten here.
-/api/*  /api/:splat  200
-/*      /index.html  200

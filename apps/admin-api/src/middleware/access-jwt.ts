@@ -34,7 +34,7 @@ export async function resolveHumanActor(db: Db, email: string): Promise<HumanAct
  *
  * Two independent conditions must hold — the flag, and a loopback hostname —
  * so that a `DEV_BYPASS_AUTH` accidentally left in production vars still can't
- * authenticate a real request to links.domk.pro.
+ * authenticate a real request to links.example.com.
  */
 function devBypassActor(request: Request, env: Env): Actor | null {
   if (env.DEV_BYPASS_AUTH !== '1') return null;

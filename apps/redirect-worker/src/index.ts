@@ -5,7 +5,7 @@ import { lookupSlug } from './lib/kv-lookup.js';
 import { lookupSlugInD1, selfHealKv } from './lib/d1-fallback.js';
 
 /**
- * Public redirect worker for domk.pro.
+ * Public redirect worker for example.com.
  *
  * Anonymous, high-QPS, latency-critical: one KV read on the happy path, no
  * framework, no admin logic, nothing imported that isn't on the critical path.
