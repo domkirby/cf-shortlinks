@@ -25,7 +25,7 @@ per [`DEPLOYMENT.md`](./DEPLOYMENT.md); defaults shown):
 apps/
   redirect-worker/    public hot path — <BASE_DOMAIN>/*
   admin-api/          authenticated CRUD — links.<BASE_DOMAIN>/api/*
-  admin-frontend/     Vue 3 SPA, Workers static assets — links.<BASE_DOMAIN>
+  admin-frontend/     React SPA (Cloudflare Kumo), Workers static assets — links.<BASE_DOMAIN>
   interactive-link/   unauthenticated interstitial pages — <BASE_DOMAIN>/_i_/*
 packages/
   shared-types/      Link, ClickEvent, JWT claim shapes

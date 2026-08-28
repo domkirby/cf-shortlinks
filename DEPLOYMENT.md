@@ -25,7 +25,7 @@ The four apps:
 | `redirect-worker` | `<BASE_DOMAIN>/*` | Public redirect hot path |
 | `interactive-link` | `<BASE_DOMAIN>/_i_/*` | Unauthenticated password-unlock pages |
 | `admin-api` | `<ADMIN_SUBDOMAIN>.<BASE_DOMAIN>/api/*` | Authenticated CRUD (Hono) |
-| `admin-frontend` | `<ADMIN_SUBDOMAIN>.<BASE_DOMAIN>/*` | Vue 3 admin SPA (Workers static assets) |
+| `admin-frontend` | `<ADMIN_SUBDOMAIN>.<BASE_DOMAIN>/*` | React admin SPA, Cloudflare Kumo (Workers static assets) |
 
 `admin-api` and `admin-frontend` live on the same hostname. That's intentional and safe:
 Cloudflare Workers route matching is by **specificity**, not deploy order, so `.../api/*`
