@@ -5,9 +5,13 @@
  */
 
 html,
+body,
+#app {
+  height: 100%;
+}
+
 body {
   margin: 0;
-  min-height: 100%;
   background: var(--color-kumo-canvas, #fff);
   color: var(--text-color-kumo-default, #1a1a1a);
   font-family:
@@ -16,10 +20,6 @@ body {
     'Segoe UI',
     Roboto,
     sans-serif;
-}
-
-#app {
-  min-height: 100vh;
 }
 
 /* The scrollable content column beside the sidebar. */

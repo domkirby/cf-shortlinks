@@ -1,11 +1,12 @@
 import { Outlet, useLocation, useNavigate } from 'react-router-dom';
-import { Banner, Button, Link, Loader, Sidebar, Text, Toasty } from '@cloudflare/kumo';
+import { Banner, Button, Loader, Sidebar, Text, Toasty } from '@cloudflare/kumo';
 import {
   ChartBar,
   Gear,
   LinkSimple,
   Moon,
   Palette,
+  SignOut,
   Sun,
   UsersThree,
   WarningCircle,
@@ -13,6 +14,8 @@ import {
 import { WhoamiProvider, useWhoami, useIsOwner } from './lib/whoami';
 import { ThemeProvider, useTheme } from './lib/theme';
 import { appToastManager } from './lib/toast';
+
+const LOGOUT_URL = '/cdn-cgi/access/logout';
 
 const NAV = [
   { key: 'links', label: 'Links', icon: LinkSimple, owner: false },
@@ -40,7 +43,7 @@ function Nav() {
   return (
     <Sidebar>
       <Sidebar.Header>
-        <div className="flex items-center justify-between gap-2 px-2 py-1">
+        <div className="flex w-full items-center justify-between gap-2 px-1">
           <Text variant="heading">CF Shortlinks</Text>
           <Button
             variant="ghost"
@@ -70,19 +73,18 @@ function Nav() {
             ))}
           </Sidebar.Menu>
         </Sidebar.Group>
+
+        <Sidebar.Group className="mt-auto">
+          {identity ? <Sidebar.GroupLabel>{identity}</Sidebar.GroupLabel> : null}
+          <Sidebar.Menu>
+            <Sidebar.MenuButton icon={SignOut} tooltip="Log out" href={LOGOUT_URL}>
+              Log out
+            </Sidebar.MenuButton>
+          </Sidebar.Menu>
+        </Sidebar.Group>
       </Sidebar.Content>
 
       <Sidebar.Footer>
-        {identity ? (
-          <div className="grid gap-1 px-2 py-1">
-            <Text variant="secondary" size="xs" truncate>
-              {identity}
-            </Text>
-            <Link href="/cdn-cgi/access/logout" variant="inline" className="text-xs">
-              Log out
-            </Link>
-          </div>
-        ) : null}
         <Sidebar.Trigger />
       </Sidebar.Footer>
     </Sidebar>
@@ -93,9 +95,9 @@ function Shell() {
   const { error, loading } = useWhoami();
 
   return (
-    <Sidebar.Provider defaultOpen collapsible="icon" className="min-h-screen w-full">
+    <Sidebar.Provider defaultOpen collapsible="icon" className="h-full w-full">
       <Nav />
-      <main className="flex min-w-0 flex-1 flex-col">
+      <main className="flex min-w-0 flex-1 flex-col overflow-y-auto">
         <div className="flex items-center gap-2 border-b border-kumo-line px-4 py-2 md:hidden">
           <Sidebar.Trigger />
           <Text variant="heading">CF Shortlinks</Text>
@@ -105,8 +107,11 @@ function Shell() {
             <Banner
               variant="error"
               icon={<WarningCircle weight="fill" />}
-              title="Admin API unavailable"
-              description={error}
+              title="Couldn't load your session"
+              description={`${error}. Your Cloudflare Access session may have expired — reload to sign in again.`}
+              action={
+                <Banner.Action onClick={() => window.location.reload()}>Reload</Banner.Action>
+              }
             />
           ) : loading ? (
             <div className="flex justify-center py-16">
