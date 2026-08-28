@@ -4,9 +4,15 @@
  * build — component styles, utility classes, and theme tokens included.
  */
 
+html,
+body,
+#app {
+  height: 100%;
+}
+
 body {
   margin: 0;
-  background: var(--color-kumo-background, #fff);
+  background: var(--color-kumo-canvas, #fff);
   color: var(--text-color-kumo-default, #1a1a1a);
   font-family:
     system-ui,
@@ -16,14 +22,10 @@ body {
     sans-serif;
 }
 
+/* The scrollable content column beside the sidebar. */
 .page {
-  max-width: 1080px;
+  width: 100%;
+  max-width: 1180px;
   margin: 0 auto;
-  padding: 1.5rem 1.25rem 4rem;
-}
-
-@media (min-width: 1280px) {
-  .page {
-    max-width: 1200px;
-  }
+  padding: 1.75rem 1.5rem 4rem;
 }
