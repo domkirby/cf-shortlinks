@@ -27,7 +27,7 @@ import { api } from '../api';
 import { derivePasswordPayload } from '../pbkdf2';
 import { errorMessage } from '../lib/errors';
 import { useAsyncData } from '../lib/useAsyncData';
-import { formatDate, toLocalInput } from '../lib/format';
+import { formatDate, toLocalInput, truncateUrl } from '../lib/format';
 import { PageHeader } from '../components/PageHeader';
 import { Card } from '../components/Card';
 import { ErrorBanner } from '../components/ErrorBanner';
@@ -257,7 +257,14 @@ export function LinksView() {
         ) : links.length === 0 ? (
           <p className="px-5 py-4 text-sm text-kumo-subtle">No links found.</p>
         ) : (
-          <Table>
+          <div className="overflow-x-auto">
+          <Table layout="fixed">
+            <colgroup>
+              <col style={{ width: '22%' }} />
+              <col style={{ width: '44%' }} />
+              <col style={{ width: '18%' }} />
+              <col style={{ width: '16%' }} />
+            </colgroup>
             <Table.Header>
               <Table.Row>
                 <Table.Head>Slug</Table.Head>
@@ -270,25 +277,28 @@ export function LinksView() {
               {links.map((link) => (
                 <Table.Row key={link.id}>
                   <Table.Cell>
-                    <Text variant="mono">/{link.slug}</Text>
+                    <Text variant="mono" truncate>
+                      /{link.slug}
+                    </Text>
                   </Table.Cell>
-                  <Table.Cell className="max-w-md">
+                  <Table.Cell>
                     <a
                       href={link.destination}
                       target="_blank"
                       rel="noopener noreferrer"
+                      title={link.destination}
                       className="block truncate font-mono text-[0.9em] text-kumo-link hover:underline"
                     >
-                      {link.destination}
+                      {truncateUrl(link.destination)}
                     </a>
                     {secondaryLine(link) ? (
-                      <Text variant="secondary" size="xs">
+                      <Text variant="secondary" size="xs" truncate>
                         {secondaryLine(link)}
                       </Text>
                     ) : null}
                   </Table.Cell>
                   <Table.Cell>
-                    <span className="flex items-center gap-1.5">
+                    <span className="flex flex-wrap items-center gap-1.5">
                       <Badge variant={link.active ? 'success' : 'neutral'} appearance="dot">
                         {link.active ? 'active' : 'off'}
                       </Badge>
@@ -342,6 +352,7 @@ export function LinksView() {
               ))}
             </Table.Body>
           </Table>
+          </div>
         )}
         <div className="flex items-center justify-between gap-4 px-5 py-3">
           <Text variant="secondary" size="sm">

@@ -5,6 +5,11 @@ export function bucketToMs(bucket: string): number {
   return Number.isNaN(ms) ? Date.now() : ms;
 }
 
+/** Cap a URL to a readable length for table cells; full value stays in `title`. */
+export function truncateUrl(url: string, max = 56): string {
+  return url.length > max ? `${url.slice(0, max - 1)}…` : url;
+}
+
 export function formatDate(epochMs: number): string {
   return new Date(epochMs).toLocaleDateString();
 }
