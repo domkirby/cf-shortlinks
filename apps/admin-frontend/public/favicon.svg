@@ -1,0 +1,7 @@
+<!-- The BrandMark, with an explicit color: a favicon has no currentColor to
+     inherit. Orange reads on both light and dark browser chrome. -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="#f6821f" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+  <path d="M9.5 14.5 14.5 9.5" />
+  <path d="M12.7 6.3 14.8 4.2a4.5 4.5 0 0 1 6.4 6.4l-2.1 2.1" />
+  <path d="M11.3 17.7 9.2 19.8a4.5 4.5 0 0 1-6.4-6.4l2.1-2.1" />
+</svg>

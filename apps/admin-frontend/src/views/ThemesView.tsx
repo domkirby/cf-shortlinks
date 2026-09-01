@@ -86,7 +86,7 @@ export function ThemesView() {
 
       <ErrorBanner message={themes.error} />
 
-      <Card className="!p-0">
+      <Card flush>
         {themes.data && themes.data.length > 0 ? (
           <Table>
             <Table.Header>
@@ -134,7 +134,7 @@ export function ThemesView() {
             </Table.Body>
           </Table>
         ) : (
-          <p className="px-5 py-4 text-sm text-kumo-subtle">No themes yet.</p>
+          <p className="card-body text-sm text-kumo-subtle">No themes yet.</p>
         )}
       </Card>
 

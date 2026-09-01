@@ -11,7 +11,7 @@ export function PageHeader({
   actions?: ReactNode;
 }) {
   return (
-    <div className="mb-6 flex flex-wrap items-start justify-between gap-4">
+    <div className="flex flex-wrap items-start justify-between gap-4">
       <div className="grid gap-1.5">
         <Text as="h1" variant="heading" size="lg">
           {title}

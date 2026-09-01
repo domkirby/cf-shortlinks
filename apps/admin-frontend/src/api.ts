@@ -90,6 +90,8 @@ export const api = {
     ).toString();
     return request<ListLinksResponse>(`/links${query ? `?${query}` : ''}`);
   },
+  /** The API resolves either a numeric id or a slug here. */
+  getLink: (slugOrId: string) => request<LinkResponse>(`/links/${encodeURIComponent(slugOrId)}`),
   createLink: (input: CreateLinkInput) =>
     request<LinkResponse>('/links', { method: 'POST', body: JSON.stringify(input) }),
   updateLink: (id: number, input: UpdateLinkInput) =>

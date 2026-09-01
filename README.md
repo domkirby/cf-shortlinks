@@ -39,6 +39,10 @@ scripts/
 checks are the one place where being subtly wrong twice is worse than being wrong
 once.
 
+How the admin SPA is meant to hang together — top bar, sidebar surfaces, page-per-setting
+routing, and the constraints of Kumo's prebuilt stylesheet — is in
+[`docs/ux.md`](./docs/ux.md).
+
 ## How a redirect resolves
 
 ```
