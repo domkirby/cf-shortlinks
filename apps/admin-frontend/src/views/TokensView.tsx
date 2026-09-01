@@ -68,7 +68,7 @@ export function TokensView() {
         description={
           <>
             The credential itself lives in Cloudflare Access — create the service token in Zero
-            Trust, scoped to the <span className="font-mono text-[0.9em]">{adminDomain}</span>{' '}
+            Trust, scoped to the <span className="mono-inline">{adminDomain}</span>{' '}
             application, then register its name here so this API will honour it. Revocation has two
             independent levers: disable it here to cut it off at the app layer instantly, or delete
             it in Access to stop it at the edge. Retiring a token for good means doing both.
@@ -78,7 +78,7 @@ export function TokensView() {
 
       <ErrorBanner message={tokens.error} />
 
-      <Card className="!p-0">
+      <Card flush>
         {tokens.data && tokens.data.length > 0 ? (
           <Table>
             <Table.Header>
@@ -129,7 +129,7 @@ export function TokensView() {
             </Table.Body>
           </Table>
         ) : (
-          <p className="px-5 py-4 text-sm text-kumo-subtle">No service tokens registered.</p>
+          <p className="card-body text-sm text-kumo-subtle">No service tokens registered.</p>
         )}
       </Card>
 

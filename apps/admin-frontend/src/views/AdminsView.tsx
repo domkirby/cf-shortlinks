@@ -61,7 +61,7 @@ export function AdminsView() {
 
       <ErrorBanner message={admins.error} />
 
-      <Card className="!p-0">
+      <Card flush>
         {admins.data && admins.data.length > 0 ? (
           <Table>
             <Table.Header>
@@ -96,7 +96,7 @@ export function AdminsView() {
             </Table.Body>
           </Table>
         ) : (
-          <p className="px-5 py-4 text-sm text-kumo-subtle">No admins yet.</p>
+          <p className="card-body text-sm text-kumo-subtle">No admins yet.</p>
         )}
       </Card>
 

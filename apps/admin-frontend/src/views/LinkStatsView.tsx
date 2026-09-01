@@ -1,7 +1,6 @@
 import { useState } from 'react';
-import { Link as RouterLink, useParams } from 'react-router-dom';
+import { useParams } from 'react-router-dom';
 import { Loader, Text } from '@cloudflare/kumo';
-import { ArrowLeft } from '@phosphor-icons/react';
 import { api } from '../api';
 import { useAsyncData } from '../lib/useAsyncData';
 import { PageHeader } from '../components/PageHeader';
@@ -18,16 +17,11 @@ export function LinkStatsView() {
 
   return (
     <div className="grid gap-6">
+      {/* The sidebar and the breadcrumb already say which link this is, so the
+          header only has to name the section. */}
       <PageHeader
-        title={<span className="font-mono">/{slug}</span>}
-        description={
-          <RouterLink
-            to="/links"
-            className="inline-flex items-center gap-1 text-kumo-link hover:underline"
-          >
-            <ArrowLeft /> All links
-          </RouterLink>
-        }
+        title="Analytics"
+        description="Clicks on this link over the selected window."
         actions={<WindowSelector days={days} onChange={setDays} />}
       />
 

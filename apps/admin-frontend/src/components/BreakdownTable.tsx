@@ -16,9 +16,9 @@ export function BreakdownTable({
       <Text as="h2" variant="heading">
         {title}
       </Text>
-      <Card className="!p-0">
+      <Card flush>
         {rows.length === 0 ? (
-          <p className="px-5 py-4 text-sm text-kumo-subtle">Nothing yet.</p>
+          <p className="card-body text-sm text-kumo-subtle">Nothing yet.</p>
         ) : (
           <Table>
             <Table.Header>

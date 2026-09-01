@@ -51,6 +51,10 @@ drift that a mocked D1 wouldn't.
 There's no linter or formatter configured in this repo yet — match the style of the
 surrounding code.
 
+Changing the admin UI? Read [`docs/ux.md`](./docs/ux.md) first — it covers where things belong in
+the shell, why link settings are pages rather than dialogs, and the one non-obvious trap: this
+repo has no Tailwind config, so a utility class Kumo doesn't itself use silently does nothing.
+
 ## What CI checks
 
 Every PR against `main` runs `.github/workflows/ci.yml`:
